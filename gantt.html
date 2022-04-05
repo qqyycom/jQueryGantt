@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html>
+<html lang="cn">
 <head>
   <meta http-equiv="X-UA-Compatible" content="IE=9; IE=8; IE=7; IE=EDGE"/>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
@@ -12,8 +12,8 @@
   <link rel=stylesheet href="ganttPrint.css" type="text/css" media="print">
   <link rel=stylesheet href="libs/jquery/valueSlider/mb.slider.css" type="text/css" media="print">
 
-  <script src="http://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-  <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
 
   <script src="libs/jquery/jquery.livequery.1.1.1.min.js"></script>
   <script src="libs/jquery/jquery.timers.js"></script>
@@ -72,6 +72,35 @@
     font-weight: bold;
     font-size: 28px;
     margin-left: 10px;
+  }
+
+  /*---------------------------------------- draggable -------------------------------------- */
+  .draggable {
+    cursor: move;
+    user-select: none;
+  }
+  .placeholder {
+    background-color: #edf2f7;
+    border: 2px dashed #cbd5e0;
+  }
+  .clone-list {
+    border-top: 1px solid #ccc;
+  }
+  .clone-table {
+    border-collapse: collapse;
+    border: none;
+  }
+  .clone-table th,
+  .clone-table td {
+    border: 1px solid #ccc;
+    border-top: none;
+    padding: 0.5rem;
+  }
+  .dragging {
+    background: #ddd;
+    border-top: 1px solid #ccc;
+    opacity: 0.2;
+    z-index: 999;
   }
 
 </style>
@@ -310,7 +339,7 @@ function saveInLocalStorage() {
 }
 
 
-//-------------------------------------------  Open a black popup for managing resources. This is only an axample of implementation (usually resources come from server) ------------------------------------------------------
+//-------------------------------------------  Open a black popup for managing resources. This is only an example of implementation (usually resources come from server) ------------------------------------------------------
 function editResources(){
 
   //make resource editor
@@ -578,7 +607,7 @@ function showBaselineInfo (event,element){
     <th class="gdfCell edit" align="right" style="cursor:pointer;"><span class="taskRowIndex">(#=obj.getRow()+1#)</span> <span class="teamworkIcon" style="font-size:12px;" >e</span></th>
     <td class="gdfCell noClip" align="center"><div class="taskStatus cvcColorSquare" status="(#=obj.status#)"></div></td>
     <td class="gdfCell"><input type="text" name="code" value="(#=obj.code?obj.code:''#)" placeholder="code/short name"></td>
-    <td class="gdfCell indentCell" style="padding-left:(#=obj.level*10+18#)px;">
+    <td class="gdfCell indentCell draggable" style="padding-left:(#=obj.level*10+18#)px;">
       <div class="exp-controller" align="center"></div>
       <input type="text" name="name" value="(#=obj.name#)" placeholder="name">
     </td>
