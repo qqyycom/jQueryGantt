@@ -1,5 +1,9 @@
-document.addEventListener('DOMContentLoaded', function () {
-    const table = document.getElementById('table');
+function GanttDragger(editor) {
+    this.editor = editor;
+    this.element = editor.element;
+}
+
+GanttDragger.prototype.init = function () {
 
     let draggingEle;
     let draggingRowIndex;
@@ -7,9 +11,25 @@ document.addEventListener('DOMContentLoaded', function () {
     let list;
     let isDraggingStarted = false;
 
+    const self = this;
+
+    let table = self.element.get(0);
+
     // The current position of mouse relative to the dragging element
     let x = 0;
     let y = 0;
+
+    table.querySelectorAll('tr').forEach(function (row, index) {
+        // Ignore the header
+        // We don't want user to change the order of header
+        if (index === 0) {
+            return;
+        }
+
+        const firstCell = row.firstElementChild;
+        firstCell.classList.add('draggable');
+        firstCell.addEventListener('mousedown', mouseDownHandler);
+    });
 
     // Swap two nodes
     const swap = function (nodeA, nodeB) {
@@ -184,15 +204,4 @@ document.addEventListener('DOMContentLoaded', function () {
         document.removeEventListener('mouseup', mouseUpHandler);
     };
 
-    table.querySelectorAll('tr').forEach(function (row, index) {
-        // Ignore the header
-        // We don't want user to change the order of header
-        if (index === 0) {
-            return;
-        }
-
-        const firstCell = row.firstElementChild;
-        firstCell.classList.add('draggable');
-        firstCell.addEventListener('mousedown', mouseDownHandler);
-    });
-});
+}
