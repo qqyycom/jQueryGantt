@@ -11,8 +11,10 @@ function GanttDragger(editor) {
   this.list;
   this.isDraggingStarted = false;
 
-  this.toCollapsed=[];
-  this.toHide=[];
+  this.toCollapsed = [];
+  this.toHide = [];
+
+  this.idTaskRowMap = {};
 
   const self = this;
 
@@ -22,8 +24,10 @@ function GanttDragger(editor) {
   this.x = 0;
   this.y = 0;
 
-  this.moveHandler = ()=>{};
-  this.upHandler = ()=>{};
+  this.moveHandler = () => {
+  };
+  this.upHandler = () => {
+  };
 
 }
 
@@ -41,6 +45,7 @@ GanttDragger.prototype.mouseDownHandler = function (e) {
   const originalRow = e.target.parentNode.parentNode;
 
   this.draggingRowIndex = [].slice.call(this.table.querySelectorAll('tr:not(.emptyRow)')).indexOf(originalRow);
+  // this.draggingRowIndex = originalRow.getAttribute("taskid");
   // Determine the mouse position
   this.x = e.clientX;
 
@@ -65,6 +70,7 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
     this.cloneTable();
     list = this.list;
     draggingEle = [].slice.call(list.children)[draggingRowIndex];
+    // draggingEle = this.idTaskRowMap[draggingRowIndex];
     this.draggingEle = draggingEle
 
     // draggingEle.classList.add('dragging');
@@ -97,13 +103,16 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
   // placeholder
   // nextEle
   const prevEle = draggingEle.previousElementSibling;
+  // const prevEle = prevDisplayedElementSibling(draggingEle);
   const nextEle = placeholder.nextElementSibling;
+  // const nextEle = nextDisplayedElementSibling(placeholder);
 
   // The dragging element is above the previous element
   // User moves the dragging element to the top
   // We don't allow to drop above the header
   // (which doesn't have `previousElementSibling`)
   if (prevEle && prevEle.previousElementSibling && isAbove(draggingEle, prevEle)) {
+    // if (prevEle && prevDisplayedElementSibling(prevEle) && isAbove(draggingEle, prevEle)) {
     // The current order    -> The new order
     // prevEle              -> placeholder
     // draggingEle          -> draggingEle
@@ -207,7 +216,8 @@ GanttDragger.prototype.cloneTable = function (draggingEle) {
 
   // Hide the original table
   table.style.visibility = 'hidden';
-  table.querySelectorAll('tr:not(.emptyRow)').forEach(function (row) {
+  const rowSet = table.querySelectorAll('tr:not(.emptyRow)')
+  for (const row of rowSet) {
     // Create a new table from given row
     const item = document.createElement('div');
 
@@ -217,12 +227,16 @@ GanttDragger.prototype.cloneTable = function (draggingEle) {
 
     newTable.style.width = `${width}px`;
     const newRow = row.cloneNode()
-    // if (toCollapsed.includes(newRow.getAttribute('taskid'))) {
-    //   newRow.classList.add('collapsed');
-    // }
-    // if (toHide.includes(newRow.getAttribute('taskid'))) {
-    //   item.style.display = 'none'
-    // }
+    let taskId = row.getAttribute('taskid');
+
+    if (taskId) {
+      this.idTaskRowMap[taskId] = item;
+    }
+
+    if (toCollapsed.includes(taskId)) {
+      newRow.classList.add('collapsed');
+    }
+
     const cells = [].slice.call(row.children);
     cells.forEach(function (cell) {
       const newCell = cell.cloneNode(true);
@@ -232,41 +246,45 @@ GanttDragger.prototype.cloneTable = function (draggingEle) {
 
     // collapse siblings
 
-
+    if (toHide.includes(taskId)) {
+      item.style.display = 'none'
+      continue;
+    }
     newTable.appendChild(newRow);
     item.appendChild(newTable);
     list.appendChild(item);
-  });
+  }
   this.list = list
 };
 
 
-GanttDragger.prototype.collapseBeforeDrag = function(task) {
-    const siblings = task.level;
-    const allTasks = this.master.tasks;
-    allTasks.forEach((t) => {
-      let id = t.id;
-      let level = t.level;
-      if (level === siblings && t.isParent()) {
-        this.toCollapsed.push(id+'')
-      } else if (level > siblings) {
-        if(t.isParent()) {
-          this.toCollapsed.push(id+'')
-        }
-        this.toHide.push(id+'')
+GanttDragger.prototype.collapseBeforeDrag = function (task) {
+  const siblings = task.level;
+  const allTasks = this.master.tasks;
+  allTasks.forEach((t) => {
+    let id = t.id;
+    let level = t.level;
+    if (level === siblings && t.isParent()) {
+      this.toCollapsed.push(id + '')
+    } else if (level > siblings) {
+      if (t.isParent()) {
+        this.toCollapsed.push(id + '')
       }
-    });
+      this.toHide.push(id + '')
+    }
+  });
 }
 
 GanttDragger.prototype.expandAfterDrag = function () {
   this.toHide = [];
   this.toCollapsed = [];
+  this.idTaskRowMap = {};
 }
 
 function nextDisplayedElementSibling(current) {
   let nextSibling = current.nextElementSibling;
 
-  while(nextSibling.style.display === 'none') {
+  while (nextSibling && nextSibling.style.display === 'none') {
     nextSibling = nextSibling.nextElementSibling;
   }
   return nextSibling;
@@ -274,8 +292,9 @@ function nextDisplayedElementSibling(current) {
 
 function prevDisplayedElementSibling(current) {
   let prevSibling = current.previousElementSibling;
-  while(prevSibling.style.display === 'none') {
+  while (prevSibling && prevSibling.style.display === 'none') {
     console.log(prevSibling);
     prevSibling = current.previousElementSibling;
   }
+  return prevSibling;
 }
