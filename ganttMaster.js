@@ -70,7 +70,8 @@ function GanttMaster() {
     canSeeDep: true,
     canSeeCriticalPath: true,
     canAddIssue: false,
-    cannotCloseTaskIfIssueOpen: false
+    cannotCloseTaskIfIssueOpen: false,
+    canDrag: true
   };
 
   this.firstDayOfWeek = Date.firstDayOfWeek;
@@ -1173,8 +1174,6 @@ GanttMaster.prototype.expandAll = function () {
   }
 };
 
-
-
 GanttMaster.prototype.collapse = function (task, all) {
   //console.debug("collapse",task)
   task.collapsed=true;
@@ -1210,7 +1209,6 @@ GanttMaster.prototype.expand = function (task,all) {
   this.storeCollapsedTasks();
 
 };
-
 
 GanttMaster.prototype.getCollapsedDescendant = function () {
   var allTasks = this.tasks;

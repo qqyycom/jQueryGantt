@@ -10,7 +10,9 @@
 
   <link rel=stylesheet href="gantt.css" type="text/css">
   <link rel=stylesheet href="ganttPrint.css" type="text/css" media="print">
+  <link rel=stylesheet href="ganttDrag.css" type="text/css" media="print">
   <link rel=stylesheet href="libs/jquery/valueSlider/mb.slider.css" type="text/css" media="print">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
@@ -36,6 +38,7 @@
   <script src="ganttTask.js"></script>
   <script src="ganttDrawerSVG.js"></script>
   <script src="ganttZoom.js"></script>
+  <script src="ganttTaskDrag.js"></script>
   <script src="ganttGridEditor.js"></script>
   <script src="ganttMaster.js"></script>  
 
@@ -94,13 +97,23 @@
   .clone-table td {
     border: 1px solid #ccc;
     border-top: none;
-    padding: 0.5rem;
+    /*padding: 0.5rem;*/
   }
   .dragging {
     background: #ddd;
     border-top: 1px solid #ccc;
     opacity: 0.2;
     z-index: 999;
+  }
+
+  .drag-controller{
+    display:inline-block;
+    width:16px;
+    height:16px;
+    position: relative;
+    top: 2px;
+    margin-left: -18px;
+    font-size: 20px;
   }
 
 </style>
@@ -607,8 +620,9 @@ function showBaselineInfo (event,element){
     <th class="gdfCell edit" align="right" style="cursor:pointer;"><span class="taskRowIndex">(#=obj.getRow()+1#)</span> <span class="teamworkIcon" style="font-size:12px;" >e</span></th>
     <td class="gdfCell noClip" align="center"><div class="taskStatus cvcColorSquare" status="(#=obj.status#)"></div></td>
     <td class="gdfCell"><input type="text" name="code" value="(#=obj.code?obj.code:''#)" placeholder="code/short name"></td>
-    <td class="gdfCell indentCell draggable" style="padding-left:(#=obj.level*10+18#)px;">
-      <div class="exp-controller" align="center"></div>
+    <td class="gdfCell">
+      <span class="draggable material-icons" align="center" style="font-size:14px">drag_indicator</span>
+      <div class="exp-controller indentCell" align="center" style="margin-left:(#=(obj.level-1)*10+8#)px;"></div>
       <input type="text" name="name" value="(#=obj.name#)" placeholder="name">
     </td>
     <td class="gdfCell" align="center"><input type="checkbox" name="startIsMilestone"></td>

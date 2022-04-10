@@ -32,6 +32,9 @@ function GridEditor(master) {
 
   this.minAllowedDate=new Date(new Date().getTime()-3600000*24*365*20).format();
   this.maxAllowedDate=new Date(new Date().getTime()+3600000*24*365*30).format();
+
+  // drag
+  this.dragger = new GanttDragger(this);
 }
 
 
@@ -158,7 +161,7 @@ GridEditor.prototype.refreshTaskRow = function (task) {
   var row = task.rowElement;
 
   row.find(".taskRowIndex").html(task.getRow() + 1);
-  row.find(".indentCell").css("padding-left", task.level * 10 + 18);
+  row.find(".indentCell").css("margin-left", task.level * 10 + 8);
   row.find("[name=name]").val(task.name);
   row.find("[name=code]").val(task.code);
   row.find("[status]").attr("status", task.status);
@@ -251,6 +254,11 @@ GridEditor.prototype.bindRowEvents = function (task, taskRow) {
       if (window.getSelection().toString().trim()=="")
         self.openFullEditor(task, $(ev.target).closest(".taskAssigs").size()>0)
       });
+  }
+
+  // draggable
+  if (this.master.permissions.canDrag) {
+    this.dragger.bindRowDragEvents(task, taskRow);
   }
   //prof.stop();
 };
