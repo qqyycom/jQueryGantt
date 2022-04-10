@@ -176,6 +176,11 @@ GridEditor.prototype.refreshTaskRow = function (task) {
   row.find(".taskAssigs").html(task.getAssigsString());
 
   //manage collapsed
+  if (task.isParent()) {
+    row.addClass("isParent");
+  } else {
+    row.removeClass("isParent");
+  }
   if (task.collapsed)
     row.addClass("collapsed");
   else

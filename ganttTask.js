@@ -793,7 +793,7 @@ Task.prototype.getSuperiorTasks = function () {
   return ret;
 };
 
-
+// 获取下级任务
 Task.prototype.getInferiors = function () {
   var ret = [];
   var task = this;
