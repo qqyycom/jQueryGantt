@@ -815,22 +815,22 @@ Ganttalendar.prototype.redraw = function () {
 
   if (this.gridChanged) {
     this.gridChanged=false;
-  var par = this.element.parent();
+    var par = this.element.parent();
 
-  //try to maintain last scroll
-  var scrollY = par.scrollTop();
-  var scrollX = par.scrollLeft();
+    //try to maintain last scroll
+    var scrollY = par.scrollTop();
+    var scrollX = par.scrollLeft();
 
-  this.element.remove();
+    this.element.remove();
 
-    var domEl = this.createGanttGrid();
-  this.element = domEl;
-  par.append(domEl);
-  this.redrawTasks();
+      var domEl = this.createGanttGrid();
+    this.element = domEl;
+    par.append(domEl);
+    this.redrawTasks();
 
-  //set old scroll  
-  par.scrollTop(scrollY);
-  par.scrollLeft(scrollX);
+    //set old scroll
+    par.scrollTop(scrollY);
+    par.scrollLeft(scrollX);
 
   } else {
     this.redrawTasks();

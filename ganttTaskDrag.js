@@ -125,15 +125,22 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
   const nextEle = placeholder.nextElementSibling;
   // const nextEle = nextDisplayedElementSibling(placeholder);
 
+  // The dragging element is above the previous element
+  // User moves the dragging element to the top
+  // We don't allow to drop above the header
+  // (which doesn't have `previousElementSibling`)
   if (prevEle && prevEle.previousElementSibling) {
     if (isOver(draggingEle, prevEle)) {
       this.startOverTriggerTimer();
       if (this.ready2TriggerOver()) {
         prevEle.classList.add('drag-be-overed');
-        console.log("draggingEle is over preEle");
+        console.log("draggingEle is over prevEle");
+        this.placeholder.style.display = "none";
       }
-    } else {
+      return;
+    } else if (prevEle.classList.contains('drag-be-overed')) {
       prevEle.classList.remove('drag-be-overed');
+      this.placeholder.style.display = "block";
       this.clearOverTriggerTimer()
     }
   }
@@ -159,9 +166,12 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
       if (this.ready2TriggerOver()) {
         nextEle.classList.add('drag-be-overed');
         console.log("draggingEle is over nextEle");
+        this.placeholder.style.visibility = "hidden";
       }
-    } else {
+      return
+    } else if (nextEle.classList.contains('drag-be-overed')) {
       nextEle.classList.remove('drag-be-overed');
+      this.placeholder.style.visibility = "visible";
       this.clearOverTriggerTimer()
     }
   }
