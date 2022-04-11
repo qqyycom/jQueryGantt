@@ -5,12 +5,37 @@
     src: url(https://fonts.gstatic.com/s/materialicons/v126/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2) format('woff2');
 }
 
-.drag-controller{
-    display:inline-block;
-    width:16px;
-    height:16px;
-    position: relative;
-    top: 2px;
-    margin-left: -18px;
-    font-size: 20px;
+/*---------------------------------------- draggable -------------------------------------- */
+.draggable {
+    cursor: move;
+    user-select: none;
+}
+.placeholder {
+    box-sizing:border-box;
+    background-color: #b7b7b7;
+    border: 2px dashed #cbd5e0;
+    opacity: 0.6;
+}
+.clone-list {
+    border-top: 1px solid #ccc;
+}
+.clone-table {
+    border-collapse: collapse;
+    border: none;
+}
+.clone-table th,
+.clone-table td {
+    /*border: 1px solid #ccc;*/
+    border-top: none;
+}
+.dragging {
+    background: #ddd;
+    border-top: 1px solid #ccc;
+    opacity: 0.2;
+    z-index: 999;
+}
+
+.drag-be-overed {
+    box-sizing:border-box;
+    border: #007bb6 2px solid;
 }

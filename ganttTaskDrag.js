@@ -16,6 +16,10 @@ function GanttDragger(editor) {
 
   this.idTaskRowMap = {};
 
+  this.startOverTime = 0;
+
+  this.TRIGGER_OVER_DURA = 500   // ms
+
   const self = this;
 
   this.table = self.element.get(0);
@@ -59,6 +63,20 @@ GanttDragger.prototype.mouseDownHandler = function (e) {
 
 };
 
+GanttDragger.prototype.ready2TriggerOver = function () {
+    return new Date().getTime() - this.startOverTime > this.TRIGGER_OVER_DURA;
+}
+
+GanttDragger.prototype.clearOverTriggerTimer = function () {
+  this.startOverTime = 0;
+}
+
+GanttDragger.prototype.startOverTriggerTimer = function () {
+  if (this.startOverTime === 0 ) {
+    this.startOverTime = new Date().getTime();
+  }
+}
+
 GanttDragger.prototype.mouseMoveHandler = function (e) {
   let draggingRowIndex = this.draggingRowIndex;
   let draggingEle = this.draggingEle;
@@ -85,7 +103,7 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
 
     placeholder.classList.add('placeholder');
     draggingEle.parentNode.insertBefore(placeholder, draggingEle.nextSibling);
-    placeholder.style.height = `${draggingEle.offsetHeight}px`;
+    // placeholder.style.height = `${draggingEle.offsetHeight}px`;
   }
 
   // Set position for dragging element
@@ -107,6 +125,20 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
   const nextEle = placeholder.nextElementSibling;
   // const nextEle = nextDisplayedElementSibling(placeholder);
 
+
+  if (prevEle && prevEle.previousElementSibling) {
+    if (isOver(draggingEle, prevEle)) {
+      this.startOverTriggerTimer()
+      if (this.ready2TriggerOver()) {
+        prevEle.classList.add('drag-be-overed');
+        console.log("draggingEle is over preEle");
+      }
+    } else {
+      prevEle.classList.remove('drag-be-overed');
+      this.clearOverTriggerTimer()
+    }
+  }
+
   // The dragging element is above the previous element
   // User moves the dragging element to the top
   // We don't allow to drop above the header
@@ -122,9 +154,22 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
     return;
   }
 
+  if (nextEle) {
+    if (isOver(draggingEle, nextEle)) {
+      this.startOverTriggerTimer()
+      if (this.ready2TriggerOver()) {
+        nextEle.classList.add('drag-be-overed');
+        console.log("draggingEle is over nextEle");
+      }
+    } else {
+      nextEle.classList.remove('drag-be-overed');
+      this.clearOverTriggerTimer()
+    }
+  }
+
   // The dragging element is below the next element
   // User moves the dragging element to the bottom
-  if (nextEle && isAbove(nextEle, draggingEle)) {
+  if (nextEle && isBlow(draggingEle, nextEle)) {
     // The current order    -> The new order
     // draggingEle          -> nextEle
     // placeholder          -> placeholder
@@ -192,9 +237,28 @@ const isAbove = function (nodeA, nodeB) {
   // Get the bounding rectangle of nodes
   const rectA = nodeA.getBoundingClientRect();
   const rectB = nodeB.getBoundingClientRect();
-
-  return rectA.top + rectA.height / 2 < rectB.top + rectB.height;
+  // 将rect 分成5份, 如果在最上1/4的位置, 则 a 高于 b
+  return rectA.top + rectA.height / 2 < rectB.top + rectB.height / 4;
 };
+
+const isOver = function (nodeA, nodeB) {
+  // 将rect 分成5份, 如果在中间 2/4 的位置, 则 a 在 b 上
+  // Get the bounding rectangle of nodes
+
+  const rectA = nodeA.getBoundingClientRect();
+  const rectB = nodeB.getBoundingClientRect();
+  let nodeACenter = rectA.top + rectA.height / 2;
+  return nodeACenter > rectB.top + rectB.height / 4 && nodeACenter < rectB.top + rectB.height * 3 / 4
+}
+
+const isBlow = function (nodeA, nodeB) {
+  // Get the bounding rectangle of nodes
+  const rectA = nodeA.getBoundingClientRect();
+  const rectB = nodeB.getBoundingClientRect();
+  // 将rect 分成5份, 如果在最下 1/4 的位置, 则 a 在 b 下
+  return rectA.top + rectA.height / 2 > rectB.top + rectB.height * 3 / 4;
+
+}
 
 GanttDragger.prototype.cloneTable = function (draggingEle) {
   let table = this.table;
