@@ -64,7 +64,7 @@ GanttDragger.prototype.mouseDownHandler = function (e) {
 };
 
 GanttDragger.prototype.ready2TriggerOver = function () {
-    return new Date().getTime() - this.startOverTime > this.TRIGGER_OVER_DURA;
+    return (new Date().getTime() - this.startOverTime) > this.TRIGGER_OVER_DURA;
 }
 
 GanttDragger.prototype.clearOverTriggerTimer = function () {
@@ -125,10 +125,9 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
   const nextEle = placeholder.nextElementSibling;
   // const nextEle = nextDisplayedElementSibling(placeholder);
 
-
   if (prevEle && prevEle.previousElementSibling) {
     if (isOver(draggingEle, prevEle)) {
-      this.startOverTriggerTimer()
+      this.startOverTriggerTimer();
       if (this.ready2TriggerOver()) {
         prevEle.classList.add('drag-be-overed');
         console.log("draggingEle is over preEle");
@@ -156,7 +155,7 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
 
   if (nextEle) {
     if (isOver(draggingEle, nextEle)) {
-      this.startOverTriggerTimer()
+      this.startOverTriggerTimer();
       if (this.ready2TriggerOver()) {
         nextEle.classList.add('drag-be-overed');
         console.log("draggingEle is over nextEle");
