@@ -16,6 +16,8 @@ function GanttDragger(editor) {
 
   this.idTaskRowMap = {};
 
+  this.taskOneLevelMap;
+
   this.startOverTime = 0;
 
   this.TRIGGER_OVER_DURA = 500   // ms
@@ -23,6 +25,8 @@ function GanttDragger(editor) {
   const self = this;
 
   this.table = self.element.get(0);
+
+
 
   // The current position of mouse relative to the dragging element
   this.x = 0;
@@ -370,4 +374,40 @@ function prevDisplayedElementSibling(current) {
     prevSibling = current.previousElementSibling;
   }
   return prevSibling;
+}
+
+GanttDragger.prototype.mappingLevelRelations = function () {
+  const tasks = this.master.tasks;
+  const parentPosition = new Stack();
+  const resMap = new Map();
+
+  if (tasks.length === 0 || tasks.length === 1) {
+    return;
+  }
+
+  parentPosition.push(tasks[0])
+
+  let pNode;
+  for (let i = 0; i < tasks.length - 1; i++) {
+    if (tasks[i + 1].level > tasks[i].level) {
+      parentPosition.push(tasks[i]);
+    } else if (tasks[i + 1].level === tasks[i].level) {
+      // do nothing
+    } else if (tasks[i + 1].level < tasks[i].level) {
+      let popStep = tasks[i].level - tasks[i + 1].level;
+      parentPosition.popN(popStep);
+    }
+    pNode = parentPosition.peek();
+
+    let pid = pNode.id;
+    let cList;
+    if (resMap.has(pid)) {
+      cList = resMap.get(pid)
+    } else {
+      resMap.set(pid, cList = []);
+    }
+    cList.push({idx: i+1, t: tasks[i + 1]})
+  }
+
+  this.taskOneLevelMap = resMap;
 }
