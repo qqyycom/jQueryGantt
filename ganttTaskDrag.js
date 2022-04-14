@@ -39,13 +39,26 @@ function GanttDragger(editor) {
 
 }
 
-
 GanttDragger.prototype.bindRowDragEvents = function (task, taskRow) {
   taskRow.find(".draggable").mousedown((e) => {
     this.selectedTask = task;
     this.selectedTaskRow = taskRow;
     this.mouseDownHandler(e);
   })
+}
+
+GanttDragger.prototype.ready2TriggerOver = function () {
+  return (new Date().getTime() - this.startOverTime) > this.TRIGGER_OVER_DURA;
+}
+
+GanttDragger.prototype.clearOverTriggerTimer = function () {
+  this.startOverTime = 0;
+}
+
+GanttDragger.prototype.startOverTriggerTimer = function () {
+  if (this.startOverTime === 0 ) {
+    this.startOverTime = new Date().getTime();
+  }
 }
 
 GanttDragger.prototype.mouseDownHandler = function (e) {
@@ -59,6 +72,8 @@ GanttDragger.prototype.mouseDownHandler = function (e) {
 
   this.y = e.clientY;
 
+  this.mappingLevelRelations();
+
   // Attach the listeners to `document`
   this.moveHandler = (e) => this.mouseMoveHandler(e);
   document.addEventListener('mousemove', this.moveHandler);
@@ -67,33 +82,17 @@ GanttDragger.prototype.mouseDownHandler = function (e) {
 
 };
 
-GanttDragger.prototype.ready2TriggerOver = function () {
-    return (new Date().getTime() - this.startOverTime) > this.TRIGGER_OVER_DURA;
-}
-
-GanttDragger.prototype.clearOverTriggerTimer = function () {
-  this.startOverTime = 0;
-}
-
-GanttDragger.prototype.startOverTriggerTimer = function () {
-  if (this.startOverTime === 0 ) {
-    this.startOverTime = new Date().getTime();
-  }
-}
-
 GanttDragger.prototype.mouseMoveHandler = function (e) {
-  let draggingRowIndex = this.draggingRowIndex;
   let draggingEle = this.draggingEle;
   let placeholder = this.placeholder;
-  let list = this.list;
 
   if (!this.isDraggingStarted) {
     this.isDraggingStarted = true;
     this.cloneTable();
-    list = this.list;
-    draggingEle = [].slice.call(list.children)[draggingRowIndex];
+    // list = this.list;
+    // draggingEle = [].slice.call(list.children)[draggingRowIndex];
     // draggingEle = this.idTaskRowMap[draggingRowIndex];
-    this.draggingEle = draggingEle
+    draggingEle = this.draggingEle
 
     // draggingEle.classList.add('dragging');
     // draggingEle = document.createElement('div');
@@ -133,20 +132,9 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
   // User moves the dragging element to the top
   // We don't allow to drop above the header
   // (which doesn't have `previousElementSibling`)
-  if (prevEle && prevEle.previousElementSibling) {
-    if (isOver(draggingEle, prevEle)) {
-      this.startOverTriggerTimer();
-      if (this.ready2TriggerOver()) {
-        prevEle.classList.add('drag-be-overed');
-        console.log("draggingEle is over prevEle");
-        this.placeholder.style.display = "none";
-      }
-      return;
-    } else if (prevEle.classList.contains('drag-be-overed')) {
-      prevEle.classList.remove('drag-be-overed');
-      this.placeholder.style.display = "block";
-      this.clearOverTriggerTimer()
-    }
+  if (prevEle && prevEle.previousElementSibling && this.isOverTriggered(draggingEle, prevEle)) {
+    this.handleOverTriggered(prevEle)
+    return;
   }
 
   // The dragging element is above the previous element
@@ -164,20 +152,10 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
     return;
   }
 
-  if (nextEle) {
-    if (isOver(draggingEle, nextEle)) {
-      this.startOverTriggerTimer();
-      if (this.ready2TriggerOver()) {
-        nextEle.classList.add('drag-be-overed');
-        console.log("draggingEle is over nextEle");
-        this.placeholder.style.visibility = "hidden";
-      }
-      return
-    } else if (nextEle.classList.contains('drag-be-overed')) {
-      nextEle.classList.remove('drag-be-overed');
-      this.placeholder.style.visibility = "visible";
-      this.clearOverTriggerTimer()
-    }
+  if (nextEle && this.isOverTriggered(draggingEle, nextEle)) {
+    // add  children row which is only one level lower
+    this.handleOverTriggered(nextEle)
+    return;
   }
 
   // The dragging element is below the next element
@@ -264,6 +242,45 @@ const isOver = function (nodeA, nodeB) {
   return nodeACenter > rectB.top + rectB.height / 4 && nodeACenter < rectB.top + rectB.height * 3 / 4
 }
 
+GanttDragger.prototype.isOverTriggered = function (nodeA, nodeB) {
+  if (isOver(nodeA, nodeB)) {
+    this.startOverTriggerTimer();
+    if (this.ready2TriggerOver()) {
+      nodeB.classList.add('drag-be-overed');
+      return true;
+    }
+  } else if (nodeB.classList.contains('drag-be-overed')) {
+    nodeB.classList.remove('drag-be-overed');
+    this.clearOverTriggerTimer()
+  }
+  return false;
+}
+
+GanttDragger.prototype.handleOverTriggered = function (overedNode) {
+  let taskId = overedNode.querySelector('tr').getAttribute('taskid');
+  let idxTasks = this.taskOneLevelMap.get(taskId);
+
+  if(!idxTasks || idxTasks.appended)
+    return
+
+  const rowSet = this.table.querySelectorAll('tr:not(.emptyRow)')
+  const insertPosition = overedNode.nextElementSibling;
+  for (let i = 0; i < idxTasks.length; i++) {
+    let idx = idxTasks[i].idx;
+    let task = idxTasks[i].t;
+    // there is a head row in rowSet. should ignore it
+    let row = rowSet[idx + 1];
+    let newRow = this.createItemFromRow(row, task.id, row.classList.contains('isParent'));
+
+    if (insertPosition) {
+      overedNode.parentNode.insertBefore(newRow, insertPosition);
+    } else {
+      overedNode.parentNode.append(newRow);
+    }
+  }
+  idxTasks.appended = true
+}
+
 const isBlow = function (nodeA, nodeB) {
   // Get the bounding rectangle of nodes
   const rectA = nodeA.getBoundingClientRect();
@@ -273,11 +290,11 @@ const isBlow = function (nodeA, nodeB) {
 
 }
 
-GanttDragger.prototype.cloneTable = function (draggingEle) {
+
+
+GanttDragger.prototype.cloneTable = function () {
   let table = this.table;
   let list;
-  // const rect = table.getBoundingClientRect();
-  const width = parseInt(window.getComputedStyle(table).width);
 
   this.collapseBeforeDrag(this.selectedTask);
 
@@ -288,51 +305,61 @@ GanttDragger.prototype.cloneTable = function (draggingEle) {
   // list.style.top = `${rect.top}px`;
   table.parentNode.insertBefore(list, table);
 
-  const toCollapsed = this.toCollapsed;
   const toHide = this.toHide;
 
   // Hide the original table
   table.style.visibility = 'hidden';
   const rowSet = table.querySelectorAll('tr:not(.emptyRow)')
-  for (const row of rowSet) {
-    // Create a new table from given row
-    const item = document.createElement('div');
-
-    item.classList.add('draggable');
-    const newTable = document.createElement('table');
-    newTable.setAttribute('class', 'clone-table gdfTable');
-
-    newTable.style.width = `${width}px`;
-    const newRow = row.cloneNode()
+  for (let i = 0; i < rowSet.length; i++) {
+    let row = rowSet[i];
     let taskId = row.getAttribute('taskid');
 
-    if (taskId) {
-      this.idTaskRowMap[taskId] = item;
-    }
-
-    if (toCollapsed.includes(taskId)) {
-      newRow.classList.add('collapsed');
-    }
-
-    const cells = [].slice.call(row.children);
-    cells.forEach(function (cell) {
-      const newCell = cell.cloneNode(true);
-      newCell.style.width = `${parseInt(window.getComputedStyle(cell).width)}px`;
-      newRow.appendChild(newCell);
-    });
-
-    // collapse siblings
-
     if (toHide.includes(taskId)) {
-      item.style.display = 'none'
       continue;
     }
-    newTable.appendChild(newRow);
-    item.appendChild(newTable);
+
+    const item = this.createItemFromRow(row, taskId);
+    if (this.draggingRowIndex === i) {
+      this.draggingEle = item;
+    }
     list.appendChild(item);
   }
   this.list = list
 };
+
+GanttDragger.prototype.createItemFromRow = function (row, taskId, isParent) {
+  const width = parseInt(window.getComputedStyle(this.table).width);
+
+  // Create a new table from given row
+  const item = document.createElement('div');
+
+  item.classList.add('draggable');
+  const newTable = document.createElement('table');
+  newTable.setAttribute('class', 'clone-table gdfTable');
+
+  newTable.style.width = `${width}px`;
+
+  const newRow = row.cloneNode()
+
+  if (this.toCollapsed.includes(taskId)) {
+    newRow.classList.add('collapsed');
+  }
+
+  if (isParent) {
+    newRow.classList.add('collapsed')
+  }
+
+  const cells = [].slice.call(row.children);
+  cells.forEach(function (cell) {
+    const newCell = cell.cloneNode(true);
+    newCell.style.width = `${parseInt(window.getComputedStyle(cell).width)}px`;
+    newRow.appendChild(newCell);
+  });
+
+  newTable.appendChild(newRow);
+  item.appendChild(newTable);
+  return item;
+}
 
 
 GanttDragger.prototype.collapseBeforeDrag = function (task) {
@@ -355,56 +382,56 @@ GanttDragger.prototype.collapseBeforeDrag = function (task) {
 GanttDragger.prototype.expandAfterDrag = function () {
   this.toHide = [];
   this.toCollapsed = [];
-  this.idTaskRowMap = {};
+  this.taskOneLevelMap = undefined;
 }
 
-function nextDisplayedElementSibling(current) {
-  let nextSibling = current.nextElementSibling;
-
-  while (nextSibling && nextSibling.style.display === 'none') {
-    nextSibling = nextSibling.nextElementSibling;
-  }
-  return nextSibling;
-}
-
-function prevDisplayedElementSibling(current) {
-  let prevSibling = current.previousElementSibling;
-  while (prevSibling && prevSibling.style.display === 'none') {
-    console.log(prevSibling);
-    prevSibling = current.previousElementSibling;
-  }
-  return prevSibling;
-}
+// function nextDisplayedElementSibling(current) {
+//   let nextSibling = current.nextElementSibling;
+//
+//   while (nextSibling && nextSibling.style.display === 'none') {
+//     nextSibling = nextSibling.nextElementSibling;
+//   }
+//   return nextSibling;
+// }
+//
+// function prevDisplayedElementSibling(current) {
+//   let prevSibling = current.previousElementSibling;
+//   while (prevSibling && prevSibling.style.display === 'none') {
+//     console.log(prevSibling);
+//     prevSibling = current.previousElementSibling;
+//   }
+//   return prevSibling;
+// }
 
 GanttDragger.prototype.mappingLevelRelations = function () {
   const tasks = this.master.tasks;
-  const parentPosition = new Stack();
+  const parentNodes = new Stack();
   const resMap = new Map();
 
   if (tasks.length === 0 || tasks.length === 1) {
     return;
   }
 
-  parentPosition.push(tasks[0])
+  parentNodes.push(tasks[0])
 
   let pNode;
   for (let i = 0; i < tasks.length - 1; i++) {
     if (tasks[i + 1].level > tasks[i].level) {
-      parentPosition.push(tasks[i]);
+      parentNodes.push(tasks[i]);
     } else if (tasks[i + 1].level === tasks[i].level) {
       // do nothing
     } else if (tasks[i + 1].level < tasks[i].level) {
       let popStep = tasks[i].level - tasks[i + 1].level;
-      parentPosition.popN(popStep);
+      parentNodes.popN(popStep);
     }
-    pNode = parentPosition.peek();
+    pNode = parentNodes.peek();
 
-    let pid = pNode.id;
+    let pTaskId = pNode.id + '';
     let cList;
-    if (resMap.has(pid)) {
-      cList = resMap.get(pid)
+    if (resMap.has(pTaskId)) {
+      cList = resMap.get(pTaskId)
     } else {
-      resMap.set(pid, cList = []);
+      resMap.set(pTaskId, cList = []);
     }
     cList.push({idx: i+1, t: tasks[i + 1]})
   }
