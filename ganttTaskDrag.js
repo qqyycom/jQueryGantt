@@ -135,6 +135,11 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
   // (which doesn't have `previousElementSibling`)
   if (prevEle && prevEle.previousElementSibling && this.isOverTriggered(draggingEle, prevEle)) {
     this.handleOverTriggered(prevEle)
+    // swap
+    swap(placeholder, draggingEle);
+    swap(placeholder, prevEle);
+    // placeHolder indent
+    indentNode(placeholder, 1)
     return;
   }
 
@@ -156,6 +161,11 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
   if (nextEle && this.isOverTriggered(draggingEle, nextEle)) {
     // add  children row which is only one level lower
     this.handleOverTriggered(nextEle)
+    // swap
+    swap(nextEle, placeholder);
+    swap(nextEle, draggingEle);
+    // placeHolder indent
+    indentNode(placeholder, 1)
     return;
   }
 
@@ -241,6 +251,15 @@ const isOver = function (nodeA, nodeB) {
   const rectB = nodeB.getBoundingClientRect();
   let nodeACenter = rectA.top + rectA.height / 2;
   return nodeACenter > rectB.top + rectB.height / 4 && nodeACenter < rectB.top + rectB.height * 3 / 4
+}
+
+const indentNode = function (node, step) {
+  let ele = node.querySelectorAll('.indentCell')[0]
+  // getComputedStyle for modern browsers, currentStyle for IE
+  let style = window.getComputedStyle ? getComputedStyle(ele, null) : ele.currentStyle;
+  let origin = style.marginLeft;
+  // slice 'px'
+  ele.style.marginLeft = (+origin.substring(0, origin.length - 2) + step * 10) + 'px'
 }
 
 GanttDragger.prototype.isOverTriggered = function (nodeA, nodeB) {
