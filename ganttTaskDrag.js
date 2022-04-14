@@ -7,11 +7,12 @@ function GanttDragger(editor) {
   this.selectedTaskRow;
   this.draggingEle;
   this.draggingRowIndex;
+  this.draggingRowFirstSameLevelNodeDistance;
   this.placeholder;
   this.list;
   this.isDraggingStarted = false;
 
-  this.toCollapsed = [];
+  this.visibleTasksInDragging = [];
   this.toHide = [];
 
   this.idTaskRowMap = {};
@@ -65,8 +66,8 @@ GanttDragger.prototype.mouseDownHandler = function (e) {
   // Get the original row
   const originalRow = e.target.parentNode.parentNode;
 
-  this.draggingRowIndex = [].slice.call(this.table.querySelectorAll('tr:not(.emptyRow)')).indexOf(originalRow);
-  // this.draggingRowIndex = originalRow.getAttribute("taskid");
+  // this.draggingRowIndex = [].slice.call(this.table.querySelectorAll('tr:not(.emptyRow)')).indexOf(originalRow);
+  this.draggingRowIndex = originalRow.getAttribute("taskid");
   // Determine the mouse position
   this.x = e.clientX;
 
@@ -193,13 +194,13 @@ GanttDragger.prototype.mouseUpHandler = function () {
   list.parentNode.removeChild(list);
 
   // Move the dragged row to `endRowIndex`
-  let rows = [].slice.call(table.querySelectorAll('tr:not(.emptyRow)'));
-  draggingRowIndex > endRowIndex
-    ? rows[endRowIndex].parentNode.insertBefore(rows[draggingRowIndex], rows[endRowIndex])
-    : rows[endRowIndex].parentNode.insertBefore(
-      rows[draggingRowIndex],
-      rows[endRowIndex].nextSibling
-    );
+  // let rows = [].slice.call(table.querySelectorAll('tr:not(.emptyRow)'));
+  // draggingRowIndex > endRowIndex
+  //   ? rows[endRowIndex].parentNode.insertBefore(rows[draggingRowIndex], rows[endRowIndex])
+  //   : rows[endRowIndex].parentNode.insertBefore(
+  //     rows[draggingRowIndex],
+  //     rows[endRowIndex].nextSibling
+  //   );
 
   // Bring back the table
   table.style.removeProperty('visibility');
@@ -258,19 +259,20 @@ GanttDragger.prototype.isOverTriggered = function (nodeA, nodeB) {
 
 GanttDragger.prototype.handleOverTriggered = function (overedNode) {
   let taskId = overedNode.querySelector('tr').getAttribute('taskid');
-  let idxTasks = this.taskOneLevelMap.get(taskId);
+  let pTask = this.master.getTask(+taskId);
+  let subTasks = this.taskOneLevelMap.get(taskId);
 
-  if(!idxTasks || idxTasks.appended)
+  if(!subTasks || subTasks.appended)
     return
 
-  const rowSet = this.table.querySelectorAll('tr:not(.emptyRow)')
+  // const rowSet = this.table.querySelectorAll('tr:not(.emptyRow)')
   const insertPosition = overedNode.nextElementSibling;
-  for (let i = 0; i < idxTasks.length; i++) {
-    let idx = idxTasks[i].idx;
-    let task = idxTasks[i].t;
+  for (let i = 0; i < subTasks.length; i++) {
+    let idx = subTasks[i].idx;
+    let task = subTasks[i].t;
     // there is a head row in rowSet. should ignore it
-    let row = rowSet[idx + 1];
-    let newRow = this.createItemFromRow(row, task.id, row.classList.contains('isParent'));
+
+    let newRow = this.createItemFromTask(task, task.isParent());
 
     if (insertPosition) {
       overedNode.parentNode.insertBefore(newRow, insertPosition);
@@ -278,7 +280,8 @@ GanttDragger.prototype.handleOverTriggered = function (overedNode) {
       overedNode.parentNode.append(newRow);
     }
   }
-  idxTasks.appended = true
+  pTask.draggingRowEle.classList.remove('collapsed')
+  subTasks.appended = true
 }
 
 const isBlow = function (nodeA, nodeB) {
@@ -296,7 +299,7 @@ GanttDragger.prototype.cloneTable = function () {
   let table = this.table;
   let list;
 
-  this.collapseBeforeDrag(this.selectedTask);
+  this.initVisibleRowList(this.selectedTask);
 
   list = document.createElement('div');
   list.classList.add('clone-list');
@@ -305,21 +308,20 @@ GanttDragger.prototype.cloneTable = function () {
   // list.style.top = `${rect.top}px`;
   table.parentNode.insertBefore(list, table);
 
-  const toHide = this.toHide;
-
   // Hide the original table
   table.style.visibility = 'hidden';
-  const rowSet = table.querySelectorAll('tr:not(.emptyRow)')
-  for (let i = 0; i < rowSet.length; i++) {
-    let row = rowSet[i];
-    let taskId = row.getAttribute('taskid');
 
-    if (toHide.includes(taskId)) {
-      continue;
-    }
+  // create header
+  const headerRow = table.querySelectorAll('tr:not(.emptyRow)')[0];
+  list.appendChild(this.createItemFromRow(headerRow));
+  let visibleTasks = this.visibleTasksInDragging;
+  for (let i = 0; i < visibleTasks.length; i++) {
+    let vt = visibleTasks[i].t;
+    let collapsed = visibleTasks[i].collapsed;
 
-    const item = this.createItemFromRow(row, taskId);
-    if (this.draggingRowIndex === i) {
+    const item = this.createItemFromTask(vt, collapsed);
+
+    if (this.draggingRowIndex === vt.id+'') {
       this.draggingEle = item;
     }
     list.appendChild(item);
@@ -327,7 +329,13 @@ GanttDragger.prototype.cloneTable = function () {
   this.list = list
 };
 
-GanttDragger.prototype.createItemFromRow = function (row, taskId, isParent) {
+GanttDragger.prototype.createItemFromTask = function (task, isCollapsed) {
+  // to DOM
+  const rowEle = task.rowElement.get(0)
+  return this.createItemFromRow(rowEle, isCollapsed, task);
+}
+
+GanttDragger.prototype.createItemFromRow = function (rowEle, isCollapsed, task) {
   const width = parseInt(window.getComputedStyle(this.table).width);
 
   // Create a new table from given row
@@ -339,17 +347,13 @@ GanttDragger.prototype.createItemFromRow = function (row, taskId, isParent) {
 
   newTable.style.width = `${width}px`;
 
-  const newRow = row.cloneNode()
+  const newRow = rowEle.cloneNode()
 
-  if (this.toCollapsed.includes(taskId)) {
-    newRow.classList.add('collapsed');
-  }
-
-  if (isParent) {
+  if (isCollapsed) {
     newRow.classList.add('collapsed')
   }
 
-  const cells = [].slice.call(row.children);
+  const cells = [].slice.call(rowEle.children);
   cells.forEach(function (cell) {
     const newCell = cell.cloneNode(true);
     newCell.style.width = `${parseInt(window.getComputedStyle(cell).width)}px`;
@@ -357,31 +361,31 @@ GanttDragger.prototype.createItemFromRow = function (row, taskId, isParent) {
   });
 
   newTable.appendChild(newRow);
+  if (task) {
+    task.draggingRowEle = newRow;
+  }
   item.appendChild(newTable);
   return item;
 }
 
-
-GanttDragger.prototype.collapseBeforeDrag = function (task) {
+GanttDragger.prototype.initVisibleRowList = function (task) {
   const siblings = task.level;
   const allTasks = this.master.tasks;
   allTasks.forEach((t) => {
-    let id = t.id;
     let level = t.level;
-    if (level === siblings && t.isParent()) {
-      this.toCollapsed.push(id + '')
-    } else if (level > siblings) {
-      if (t.isParent()) {
-        this.toCollapsed.push(id + '')
+    let collapsed = false;
+    if (level <= siblings) {
+      if (level === siblings) {
+        collapsed = true;
       }
-      this.toHide.push(id + '')
+      this.visibleTasksInDragging.push({t, collapsed});
     }
   });
 }
 
 GanttDragger.prototype.expandAfterDrag = function () {
   this.toHide = [];
-  this.toCollapsed = [];
+  this.visibleTasksInDragging = [];
   this.taskOneLevelMap = undefined;
 }
 

@@ -563,7 +563,7 @@ GanttMaster.prototype.getTask = function (taskId) {
   var ret;
   for (var i = 0; i < this.tasks.length; i++) {
     var tsk = this.tasks[i];
-    if (tsk.id == taskId) {
+    if (tsk.id === taskId) {
       ret = tsk;
       break;
     }
