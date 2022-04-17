@@ -255,18 +255,20 @@ GanttDragger.prototype.mouseUpHandler = function () {
   draggingEle.style.removeProperty('left');
   draggingEle.style.removeProperty('position');
 
-  const draggedTasks = [this.selectedTask].concat(this.selectedTask.getDescendant());
+  const draggedTasks = [];
+  draggedTasks.push(this.selectedTask);
+  this.selectedTask.getDescendant().forEach(st => draggedTasks.push(st));
+
 
   // Get the end index
   const insertBeforeTaskId = draggingEle.nextElementSibling.querySelector('tr').getAttribute('taskid');
 
-  // init task LinkedList
   const newTasks = [];
   for (let i = 0; i < this.master.tasks.length; i++) {
     const t = this.master.tasks[i];
 
-    if (t.id === insertBeforeTaskId) {
-      draggedTasks.forEach(dt => newTasks.insertBefore(dt, t));
+    if (t.id == insertBeforeTaskId) {
+      draggedTasks.forEach(dt => newTasks.push(dt));
     }
 
     if(!draggedTasks.includes(t)) {

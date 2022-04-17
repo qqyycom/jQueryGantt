@@ -73,6 +73,8 @@ function Task(id, name, code, level, start, end, duration, collapsed) {
   this.ganttElement; //gantt html element
   this.master;
 
+  this.draggingRowEle;
+
 
   this.assigs = [];
 }
