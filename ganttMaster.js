@@ -174,6 +174,9 @@ GanttMaster.prototype.init = function (workSpace) {
     self.redo();
   }).bind("resize.gantt", function () {
     self.resize();
+
+  }).bind("draggingDone.gantt", function () {
+    self.draggingDone()
   });
 
 
@@ -1679,6 +1682,14 @@ GanttMaster.prototype.manageSaveRequired=function(ev, showSave) {
     $("#LOG_CHANGES_CONTAINER").hide();
   }
 
+}
+
+//------------------------------------------- MANAGE DRAGGING DONE ---------------------------------------------------
+GanttMaster.prototype.draggingDone = function () {
+  const self = this;
+  self.beginTransaction();
+  self.editor.dragger.onMouseDown()
+  self.endTransaction();
 }
 
 

@@ -243,6 +243,8 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
 };
 
 GanttDragger.prototype.mouseUpHandler = function () {
+  this.master.beginTransaction();
+
   let placeholder = this.placeholder;
   let draggingEle = this.draggingEle;
   let list = this.list;
@@ -259,27 +261,43 @@ GanttDragger.prototype.mouseUpHandler = function () {
   draggedTasks.push(this.selectedTask);
   this.selectedTask.getDescendant().forEach(st => draggedTasks.push(st));
 
+  let newTasks = [];
+  let tasks = this.master.tasks;
+  if (draggingEle.nextElementSibling) {
+    const insertBeforeTaskId = draggingEle.nextElementSibling.querySelector('tr').getAttribute('taskid');
+    for (let i = 0; i < tasks.length; i++) {
+      const t = tasks[i];
 
-  // Get the end index
-  const insertBeforeTaskId = draggingEle.nextElementSibling.querySelector('tr').getAttribute('taskid');
+      if (t.id == insertBeforeTaskId) {
+        draggedTasks.forEach(dt => {
+          newTasks.push(dt)
+          t.rowElement.before(dt.rowElement)
+        });
+      }
 
-  const newTasks = [];
-  for (let i = 0; i < this.master.tasks.length; i++) {
-    const t = this.master.tasks[i];
-
-    if (t.id == insertBeforeTaskId) {
-      draggedTasks.forEach(dt => newTasks.push(dt));
+      if(!draggedTasks.includes(t)) {
+        newTasks.push(t);
+      }
     }
+  } else {
+    for (let i = 0; i < tasks.length; i++) {
+      const t = tasks[i];
 
-    if(!draggedTasks.includes(t)) {
-      newTasks.push(t);
+      if(!draggedTasks.includes(t)) {
+        newTasks.push(t);
+      }
     }
+    [].concat(draggedTasks).reverse().forEach(t => tasks[tasks.length - 1].rowElement.after(t.rowElement))
+    newTasks = newTasks.concat(draggedTasks);
+    // tasks[tasks.length - 1].rowElement.after(draggedTasks.pop())
   }
 
   this.isDraggingStarted = false;
 
-  // change task
+  // change memory
   this.master.tasks = newTasks;
+  // change dom
+
 
   // Remove the `list` element
   list.parentNode.removeChild(list);
@@ -301,7 +319,9 @@ GanttDragger.prototype.mouseUpHandler = function () {
   document.removeEventListener('mouseup', this.upHandler);
 
   this.expandAfterDrag();
-  this.master.taskIsChanged();
+  //recompute depends string
+  this.master.updateDependsStrings();
+  this.master.endTransaction();
 };
 
 // Swap two nodes
