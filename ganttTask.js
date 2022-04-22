@@ -950,6 +950,63 @@ Task.prototype.indent = function () {
   return ret;
 };
 
+Task.prototype.refreshIndent = function () {
+  console.debug("indent", this);
+  //a row above must exist
+  var row = this.getRow();
+
+  //no row no party
+  if (row <= 0)
+    return false;
+
+  var futureParents = this.getParents();
+
+  var oldLevel = this.level;
+  for (var i = row; i < this.master.tasks.length; i++) {
+    var desc = this.master.tasks[i];
+    if (desc.level > oldLevel || desc == this) {
+      // desc.level++;
+      //remove links from this and descendant to my parents
+      this.master.links = this.master.links.filter(function (link) {
+        var linkToParent = false;
+        if (link.to == desc)
+          linkToParent = futureParents.indexOf(link.from) >= 0;
+        else if (link.from == desc)
+          linkToParent = futureParents.indexOf(link.to) >= 0;
+        return !linkToParent;
+      });
+      //remove links from this and descendants to predecessors of parents in order to avoid loop
+      var predecessorsOfFutureParents = [];
+      for (var j = 0; j < futureParents.length; j++)
+        predecessorsOfFutureParents = predecessorsOfFutureParents.concat(futureParents[j].getSuperiorTasks());
+
+      this.master.links = this.master.links.filter(function (link) {
+        var linkToParent = false;
+        if (link.from == desc)
+          linkToParent = predecessorsOfFutureParents.indexOf(link.to) >= 0;
+        return !linkToParent;
+      });
+    } else
+      break;
+  }
+
+  var parent = this.getParent();
+  // set start date to parent' start if no deps
+  if (parent && !this.depends) {
+    var new_end = computeEndByDuration(parent.start, this.duration);
+    this.master.changeTaskDates(this, parent.start, new_end);
+  }
+
+
+  //recompute depends string
+  this.master.updateDependsStrings();
+  //enlarge parent using a fake set period
+  updateTree(this);
+  //force status check starting from parent
+  this.getParent().synchronizeStatus();
+  return true;
+};
+
 
 Task.prototype.outdent = function () {
   //console.debug("outdent", this);
@@ -970,6 +1027,41 @@ Task.prototype.outdent = function () {
     } else
       break;
   }
+
+  var task = this;
+  var chds = this.getChildren();
+  //remove links from me to my new children
+  this.master.links = this.master.links.filter(function (link) {
+    var linkExist = (link.to == task && chds.indexOf(link.from) >= 0 || link.from == task && chds.indexOf(link.to) >= 0);
+    return !linkExist;
+  });
+
+
+  //enlarge me if inherited children are larger
+  for (var i = 0; i < chds.length; i++) {
+    //remove links from me to my new children
+    chds[i].setPeriod(chds[i].start + 1, chds[i].end + 1);
+  }
+
+  //recompute depends string
+  this.master.updateDependsStrings();
+
+  //enlarge parent using a fake set period
+  this.setPeriod(this.start + 1, this.end + 1);
+
+  //force status check
+  this.synchronizeStatus();
+  return ret;
+};
+
+Task.prototype.refreshOutdent = function () {
+  //console.debug("outdent", this);
+
+  //a level must be >1 -> cannot escape from root
+  if (this.level <= 1)
+    return false;
+
+  var ret = true;
 
   var task = this;
   var chds = this.getChildren();

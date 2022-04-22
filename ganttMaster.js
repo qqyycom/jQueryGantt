@@ -45,7 +45,7 @@ function GanttMaster() {
 
   this.fillWithEmptyLines=true; //when is used by widget it could be usefull to do not fill with empty lines
 
-  this.rowHeight = 30; // todo get it from css?
+  this.rowHeight = 50; // todo get it from css?
   this.minRowsInEditor=30; // number of rows always visible in editor
   this.numOfVisibleRows=0; //number of visible rows in the editor
   this.firstScreenLine=0; //first visible row ignoring collapsed tasks

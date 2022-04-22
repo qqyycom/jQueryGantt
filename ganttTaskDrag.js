@@ -26,6 +26,20 @@ function GanttDragger(editor) {
 
   this.moveRangeStack = new Stack();
 
+  (function() {
+    let stepCnt = 0;
+    self.doIndent = function (step) {
+      stepCnt += step;
+      console.log(stepCnt);
+    }
+    self.resetIndent = function () {
+      stepCnt = 0;
+    }
+    self.getIndentStep = function () {
+      return stepCnt;
+    }
+  })();
+
   // The current position of mouse relative to the dragging element
   this.x = 0;
   this.y = 0;
@@ -168,7 +182,7 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
       console.debug('pos is out of range')
       // fold overed Node
       this.collapsedNode(moveRange.rootTask)
-      unindentNode(placeholder, 1);
+      this.outdentNode(placeholder, 1);
       moveRange.rootNode.isOverHandled = false;
       this.moveRangeStack.pop();
     } else {
@@ -185,7 +199,7 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
     swap(placeholder, draggingEle);
     swap(placeholder, prevEle);
     // placeHolder indent
-    indentNode(placeholder, 1)
+    this.indentNode(placeholder, 1)
 
     let taskId = prevEle.querySelector('tr').getAttribute('taskid');
     this.master.getTask(+taskId)
@@ -220,7 +234,7 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
     swap(nextEle, placeholder);
     swap(nextEle, draggingEle);
     // placeHolder indent
-    indentNode(placeholder, 1)
+    this.indentNode(placeholder, 1)
 
     let taskId = nextEle.querySelector('tr').getAttribute('taskid');
     this.master.getTask(+taskId)
@@ -270,6 +284,7 @@ GanttDragger.prototype.mouseUpHandler = function () {
 
       if (t.id == insertBeforeTaskId) {
         draggedTasks.forEach(dt => {
+          dt.level += this.getIndentStep();
           newTasks.push(dt)
           t.rowElement.before(dt.rowElement)
         });
@@ -296,20 +311,9 @@ GanttDragger.prototype.mouseUpHandler = function () {
 
   // change memory
   this.master.tasks = newTasks;
-  // change dom
-
 
   // Remove the `list` element
   list.parentNode.removeChild(list);
-
-  // Move the dragged row to `endRowIndex`
-  // let rows = [].slice.call(table.querySelectorAll('tr:not(.emptyRow)'));
-  // draggingRowIndex > endRowIndex
-  //   ? rows[endRowIndex].parentNode.insertBefore(rows[draggingRowIndex], rows[endRowIndex])
-  //   : rows[endRowIndex].parentNode.insertBefore(
-  //     rows[draggingRowIndex],
-  //     rows[endRowIndex].nextSibling
-  //   );
 
   // Bring back the table
   table.style.removeProperty('visibility');
@@ -318,9 +322,15 @@ GanttDragger.prototype.mouseUpHandler = function () {
   document.removeEventListener('mousemove', this.moveHandler);
   document.removeEventListener('mouseup', this.upHandler);
 
-  this.expandAfterDrag();
   //recompute depends string
-  this.master.updateDependsStrings();
+  if (this.getIndentStep() > 0) {
+    this.selectedTask.refreshIndent();
+  } else if (this.getIndentStep() < 0) {
+    this.selectedTask.refreshOutdent();
+  } else {
+    this.master.updateDependsStrings();
+  }
+  this.expandAfterDrag();
   this.master.endTransaction();
 };
 
@@ -364,17 +374,18 @@ const isOver = function (nodeA, nodeB) {
   return nodeACenter > rectB.top + rectB.height / GanttDragger.NODE_PARTITION * GanttDragger.ABOVE_PART && nodeACenter < rectB.top + rectB.height / GanttDragger.NODE_PARTITION * (GanttDragger.NODE_PARTITION - GanttDragger.BELOW_PART)
 }
 
-const indentNode = function (node, step) {
+GanttDragger.prototype.indentNode = function (node, step) {
   let ele = node.querySelectorAll('.indentCell')[0]
   // getComputedStyle for modern browsers, currentStyle for IE
   let style = window.getComputedStyle ? getComputedStyle(ele, null) : ele.currentStyle;
   let origin = style.marginLeft;
   // slice 'px'
   ele.style.marginLeft = (+origin.substring(0, origin.length - 2) + step * 10) + 'px'
+  this.doIndent(step)
 }
 
-const unindentNode = function (node, step) {
-  indentNode(node, 0-step)
+GanttDragger.prototype.outdentNode = function (node, step) {
+  this.indentNode(node, 0-step)
 }
 
 GanttDragger.prototype.isOverTriggered = function (nodeA, nodeB) {
@@ -547,6 +558,7 @@ GanttDragger.prototype.expandAfterDrag = function () {
   this.visibleTasksInDragging = [];
   this.taskOneLevelMap = undefined;
   this.moveRangeStack.clear();
+  this.resetIndent()
 }
 
 

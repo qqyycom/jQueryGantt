@@ -393,7 +393,7 @@ body{
 
 
 .taskEditRow,.emptyRow {
-  height:30px;
+  height:50px;
 }
 
 .taskEditRow input, .columnWidthTest{

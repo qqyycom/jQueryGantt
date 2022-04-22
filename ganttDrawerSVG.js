@@ -45,7 +45,7 @@ function Ganttalendar(startMillis, endMillis, master, minGanttSize) {
 
   this.linkOnProgress = false; //set to true when creating a new link
 
-  this.taskHeight=20;
+  this.taskHeight=40;
   this.resizeZoneWidth=5;
   this.taskVertOffset = (this.master.rowHeight - this.taskHeight) / 2;
 }
