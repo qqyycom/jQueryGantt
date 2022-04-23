@@ -221,6 +221,8 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
     // placeholder          -> prevEle
     swap(placeholder, draggingEle);
     swap(placeholder, prevEle);
+
+    // prevEle.querySelector('tr').getAttribute('')
     return;
   }
 
@@ -474,29 +476,41 @@ GanttDragger.prototype.cloneTable = function () {
   list.appendChild(this.createItemFromRow(headerRow));
 
   // create first row
-  let firstTask = this.master.tasks[0];
-  const firstItemRow = this.createItemFromTask(firstTask)
-  list.appendChild(firstItemRow);
+  // let firstTask = this.master.tasks[0];
+  // const firstItemRow = this.createItemFromTask(firstTask)
+  // list.appendChild(firstItemRow);
+  //
+  // let expend2level = this.selectedTask.level;
+  //
+  // this.handleOverTriggered(firstItemRow, expend2level);
 
-  let expend2level = this.selectedTask.level;
+  let desc = []
 
-  this.handleOverTriggered(firstItemRow, expend2level);
+  this.master.tasks.forEach(t => {
+    let collapsed = t.collapsed;
+    if (t == this.selectedTask) {
+      collapsed = true;
+    }
+    if (!desc.includes(t)) {
+      const taskRow = this.createItemFromTask(t, collapsed)
+      list.appendChild(taskRow);
+
+      if(collapsed) {
+        desc = [].concat(desc, t.getDescendant())
+      } else {
+        let idStr = t.id + '';
+        if (this.taskOneLevelMap.has(idStr) ) {
+          this.taskOneLevelMap.get(idStr).appended = true;
+        }
+      }
+    }
+  });
 
   this.draggingEle = this.selectedTask.draggingRowEle.parentNode.parentNode;
 
-  // let visibleTasks = this.visibleTasksInDragging;
-  // for (let i = 0; i < visibleTasks.length; i++) {
-  //   let vt = visibleTasks[i].t;
-  //   let collapsed = visibleTasks[i].collapsed;
-  //
-  //   const item = this.createItemFromTask(vt, collapsed);
-  //
-  //   if (this.draggingRowIndex === vt.id) {
-  //     this.draggingEle = item;
-  //   }
-  //   list.appendChild(item);
-  // }
   this.list = list
+
+  this.initMoveRangeStack();
 };
 
 GanttDragger.prototype.createItemFromTask = function (task, isCollapsed) {
@@ -596,4 +610,9 @@ GanttDragger.prototype.mappingLevelRelations = function () {
   }
 
   this.taskOneLevelMap = resMap;
+}
+
+GanttDragger.prototype.initMoveRangeStack = function () {
+  this.selectedTask.getParents()
+  // let moveRange = new OneLevelMoveRange(this, this.master.getTask(+taskId), placeholder.offsetHeight);
 }
