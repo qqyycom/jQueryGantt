@@ -476,35 +476,13 @@ GanttDragger.prototype.cloneTable = function () {
   list.appendChild(this.createItemFromRow(headerRow));
 
   // create first row
-  // let firstTask = this.master.tasks[0];
-  // const firstItemRow = this.createItemFromTask(firstTask)
-  // list.appendChild(firstItemRow);
-  //
-  // let expend2level = this.selectedTask.level;
-  //
-  // this.handleOverTriggered(firstItemRow, expend2level);
+  let firstTask = this.master.tasks[0];
+  const firstItemRow = this.createItemFromTask(firstTask)
+  list.appendChild(firstItemRow);
 
-  let desc = []
+  let expend2level = this.selectedTask.level;
 
-  this.master.tasks.forEach(t => {
-    let collapsed = t.collapsed;
-    if (t == this.selectedTask) {
-      collapsed = true;
-    }
-    if (!desc.includes(t)) {
-      const taskRow = this.createItemFromTask(t, collapsed)
-      list.appendChild(taskRow);
-
-      if(collapsed) {
-        desc = [].concat(desc, t.getDescendant())
-      } else {
-        let idStr = t.id + '';
-        if (this.taskOneLevelMap.has(idStr) ) {
-          this.taskOneLevelMap.get(idStr).appended = true;
-        }
-      }
-    }
-  });
+  this.handleOverTriggered(firstItemRow, expend2level);
 
   this.draggingEle = this.selectedTask.draggingRowEle.parentNode.parentNode;
 
