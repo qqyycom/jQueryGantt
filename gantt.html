@@ -17,6 +17,9 @@
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.1.1/dist/jquery.min.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
 
+<!--  <script src="jquery.min.js"></script>-->
+<!--  <script src="jquery-ui.min.js"></script>-->
+
   <script src="libs/jquery/jquery.livequery.1.1.1.min.js"></script>
   <script src="libs/jquery/jquery.timers.js"></script>
 
@@ -387,7 +390,7 @@ function initializeHistoryManagement(taskId){
   $.getJSON(contextPath+"/applications/teamwork/task/taskAjaxController.jsp", {CM: "GETGANTTHISTPOINTS", OBJID:taskId}, function (response) {
 
     //if there are history points
-    if (response.ok && response.historyPoints && response.historyPoints.length>0) {
+    if (response.ok == true && response.historyPoints && response.historyPoints.length>0) {
 
       //add show slider button on button bar
       var histBtn = $("<button>").addClass("button textual icon lreq30 lreqLabel").attr("title", "SHOW_HISTORY").append("<span class=\"teamworkIcon\">&#x60;</span>");
