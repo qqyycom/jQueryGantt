@@ -583,7 +583,7 @@ function showBaselineInfo (event,element){
     <td class="gdfCell noClip" align="center"><div class="taskStatus cvcColorSquare" status="(#=obj.status#)"></div></td>
     <td class="gdfCell"><input type="text" name="code" value="(#=obj.code?obj.code:''#)" placeholder="code/short name"></td>
     <td class="gdfCell">
-      <span class="draggable material-icons" align="center" style="font-size:14px">drag_indicator</span>
+      (#=obj.level != 0?'<span class="draggable material-icons" align="center" style="font-size:14px">drag_indicator</span>':'<span style="width:14px;display: inline-block"></span>' #)
       <div class="exp-controller indentCell" align="center" style="margin-left:(#=(obj.level-1)*10+8#)px;"></div>
       <input type="text" name="name" value="(#=obj.name#)" placeholder="name">
     </td>

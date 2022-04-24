@@ -63,14 +63,23 @@ function OneLevelMoveRange(ganttDragger, rootTask, placeHolderHeight = 30) {
   this.rootNode = rootTask.draggingRowEle.parentNode.parentNode;
   // this.placeHolderFixedHeight = 30;
 
-  this.startPos = OneLevelMoveRange.FIXED_OFFSET_Y + this.rootNode.offsetTop + this.rootNode.offsetHeight / GanttDragger.NODE_PARTITION * GanttDragger.ABOVE_PART;
+  this.startPos = OneLevelMoveRange.FIXED_OFFSET_Y + this.rootNode.offsetTop + this.rootNode.offsetHeight / GanttDragger.NODE_PARTITION * GanttDragger.ABOVE_PART - 5;
+  this.startTaskRow = rootTask;
+  // this.startPos = OneLevelMoveRange.FIXED_OFFSET_Y + this.rootNode.offsetTop + this.rootNode.offsetHeight;
 
   const subTasks = this.subTaskList;
   if (subTasks) {
     let lastSubTaskNode = subTasks[subTasks.length - 1].subTask.draggingRowEle.parentNode.parentNode;
     this.endPos = OneLevelMoveRange.FIXED_OFFSET_Y + lastSubTaskNode.offsetTop + lastSubTaskNode.offsetHeight + placeHolderHeight;
+    this.endTaskRow = lastSubTaskNode;
   } else {
     this.endPos = OneLevelMoveRange.FIXED_OFFSET_Y + this.rootNode.offsetTop + this.rootNode.offsetHeight + placeHolderHeight;
+    this.endTaskRow = rootTask;
+  }
+
+
+  this.isEquals = function (other) {
+    return other.rootTask == this.rootTask
   }
 
   this.isActive = false;
@@ -85,6 +94,9 @@ OneLevelMoveRange.prototype.inactiveRange = function () {
 }
 
 GanttDragger.prototype.bindRowDragEvents = function (task, taskRow) {
+  if (task.level === 0) {
+    return
+  }
   taskRow.find(".draggable").mousedown((e) => {
     this.selectedTask = task;
     this.selectedTaskRow = taskRow;
@@ -149,6 +161,7 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
     placeholder.classList.add('placeholder');
     draggingEle.parentNode.insertBefore(placeholder, draggingEle.nextSibling);
     // placeholder.style.height = `${draggingEle.offsetHeight}px`;
+    this.initMoveRangeStack();
   }
 
   // Set position for dragging element
@@ -174,6 +187,7 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
   // User moves the dragging element to the top
   // We don't allow to drop above the header
   // (which doesn't have `previousElementSibling`)
+
   if (!this.moveRangeStack.isEmpty()) {
     // outside of range
     const moveRange = this.moveRangeStack.peek();
@@ -190,20 +204,21 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
     }
   }
 
-  if (prevEle && prevEle.previousElementSibling && this.isOverTriggered(draggingEle, prevEle)) {
+  if (prevEle && prevEle.previousElementSibling && prevEle.querySelector('.draggable') && this.isOverTriggered(draggingEle, prevEle)) {
     if (prevEle.isOverHandled) {
       return;
     }
     this.handleOverTriggered(prevEle)
     // swap
-    swap(placeholder, draggingEle);
-    swap(placeholder, prevEle);
+    // swap(placeholder, draggingEle);
+    // swap(placeholder, prevEle);
     // placeHolder indent
     this.indentNode(placeholder, 1)
 
     let taskId = prevEle.querySelector('tr').getAttribute('taskid');
-    this.master.getTask(+taskId)
-    let moveRange = new OneLevelMoveRange(this, this.master.getTask(+taskId), placeholder.offsetHeight);
+    let prevTask = this.master.getTask(+taskId);
+
+    let moveRange = new OneLevelMoveRange(this, prevTask, placeholder.offsetHeight);
     this.moveRangeStack.push(moveRange)
     prevEle.isOverHandled = true
     return;
@@ -213,7 +228,7 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
   // User moves the dragging element to the top
   // We don't allow to drop above the header
   // (which doesn't have `previousElementSibling`)
-  if (prevEle && prevEle.previousElementSibling && isAbove(draggingEle, prevEle)) {
+  if (prevEle && prevEle.previousElementSibling && prevEle.querySelector('.draggable') && isAbove(draggingEle, prevEle)) {
     // if (prevEle && prevDisplayedElementSibling(prevEle) && isAbove(draggingEle, prevEle)) {
     // The current order    -> The new order
     // prevEle              -> placeholder
@@ -222,7 +237,6 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
     swap(placeholder, draggingEle);
     swap(placeholder, prevEle);
 
-    // prevEle.querySelector('tr').getAttribute('')
     return;
   }
 
@@ -239,8 +253,8 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
     this.indentNode(placeholder, 1)
 
     let taskId = nextEle.querySelector('tr').getAttribute('taskid');
-    this.master.getTask(+taskId)
-    let moveRange = new OneLevelMoveRange(this, this.master.getTask(+taskId), placeholder.offsetHeight);
+    let nextTask = this.master.getTask(+taskId);
+    let moveRange = new OneLevelMoveRange(this, nextTask, placeholder.offsetHeight);
     this.moveRangeStack.push(moveRange)
     nextEle.isOverHandled = true;
     return;
@@ -259,7 +273,14 @@ GanttDragger.prototype.mouseMoveHandler = function (e) {
 };
 
 GanttDragger.prototype.mouseUpHandler = function () {
-  this.master.beginTransaction();
+  // Remove the handlers of `mousemove` and `mouseup`
+  document.removeEventListener('mousemove', this.moveHandler);
+  document.removeEventListener('mouseup', this.upHandler);
+
+  if(!this.isDraggingStarted) {
+    this.expandAfterDrag();
+    return
+  }
 
   let placeholder = this.placeholder;
   let draggingEle = this.draggingEle;
@@ -268,11 +289,14 @@ GanttDragger.prototype.mouseUpHandler = function () {
 
   // Remove the placeholder
   placeholder && placeholder.parentNode.removeChild(placeholder);
-  draggingEle.classList.remove('dragging');
-  draggingEle.style.removeProperty('top');
-  draggingEle.style.removeProperty('left');
-  draggingEle.style.removeProperty('position');
+  if (draggingEle) {
+    draggingEle.classList.remove('dragging');
+    draggingEle.style.removeProperty('top');
+    draggingEle.style.removeProperty('left');
+    draggingEle.style.removeProperty('position');
+  }
 
+  this.master.beginTransaction();
   const draggedTasks = [];
   draggedTasks.push(this.selectedTask);
   this.selectedTask.getDescendant().forEach(st => draggedTasks.push(st));
@@ -320,10 +344,6 @@ GanttDragger.prototype.mouseUpHandler = function () {
   // Bring back the table
   table.style.removeProperty('visibility');
 
-  // Remove the handlers of `mousemove` and `mouseup`
-  document.removeEventListener('mousemove', this.moveHandler);
-  document.removeEventListener('mouseup', this.upHandler);
-
   //recompute depends string
   if (this.getIndentStep() > 0) {
     this.selectedTask.refreshIndent();
@@ -338,6 +358,10 @@ GanttDragger.prototype.mouseUpHandler = function () {
 
 // Swap two nodes
 const swap = function (nodeA, nodeB) {
+  console.log(nodeA)
+  console.log(nodeB)
+  console.log('\n')
+
   const parentA = nodeA.parentNode;
   const siblingA = nodeA.nextSibling === nodeB ? nodeA : nodeA.nextSibling;
 
@@ -449,7 +473,10 @@ GanttDragger.prototype.collapsedNode = function (task) {
   let subTasks = this.taskOneLevelMap.get(taskId);
 
   if (subTasks) {
-    subTasks.forEach(st => rootNodeElem.parentNode.removeChild(st.subTask.draggingRowEle.parentNode.parentNode));
+    subTasks.forEach(st => {
+      if(st.subTask != this.selectedTask)
+        rootNodeElem.parentNode.removeChild(st.subTask.draggingRowEle.parentNode.parentNode)
+    });
     subTasks.appended = false;
     task.draggingRowEle.classList.add('collapsed');
   }
@@ -488,7 +515,7 @@ GanttDragger.prototype.cloneTable = function () {
 
   this.list = list
 
-  this.initMoveRangeStack();
+  // this.initMoveRangeStack();
 };
 
 GanttDragger.prototype.createItemFromTask = function (task, isCollapsed) {
@@ -591,6 +618,13 @@ GanttDragger.prototype.mappingLevelRelations = function () {
 }
 
 GanttDragger.prototype.initMoveRangeStack = function () {
-  this.selectedTask.getParents()
+
+  let pTask = this.selectedTask.getParent();
+  if (pTask && pTask.level > 0) {
+    let moveRange = new OneLevelMoveRange(this, pTask, 0);
+    moveRange.rootNode.isOverHandled = true;
+    this.moveRangeStack.push(moveRange);
+  }
+
   // let moveRange = new OneLevelMoveRange(this, this.master.getTask(+taskId), placeholder.offsetHeight);
 }
