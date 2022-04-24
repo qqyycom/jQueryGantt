@@ -435,29 +435,6 @@ function deleteById(app, applyId){
 }
 
 
-var paraMap = {
-  "projectName": "gantt",
-  "name": "testName111",
-  "description": "desc",
-  "start": "2021-01-29",
-  "end": "2021-11-29",
-  "parentid": 1,
-  "rank": 1,
-  "depend": 1
-}
-
-var updateParaMap = {
-  "projectName": "gantt",
-  "name": "testName111",
-  "description": "desc",
-  "start": "2021-01-29",
-  "end": "2021-11-29",
-  "parentid": 1,
-  "rank": 1,
-  "depend": ''
-}
-
-
 function buildInsertPostBody(para){
   var postBody = [];  
   var post = clone(map);
