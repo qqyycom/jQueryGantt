@@ -30,6 +30,7 @@ var userid = 668005;
 var projectApp = "849c7437";
 var detailApp = "cfaf51af";
 var sortApp = "76bb501d";
+var host = "http://localhost"
 
 
 var projectMap = {
@@ -254,7 +255,7 @@ function getOperationResult(requestId){
   console.info( requestId );
   var res = null;
     $.ajax({
-      url: 'http://localhost/api/operation/' + requestId,
+      url: host + '/api/operation/' + requestId,
       type: 'get',
       headers: {
         "accessToken": accessToken
@@ -273,7 +274,7 @@ function getOperationResult(requestId){
 }
 
 function getSelectUrl(app){
-  return "http://localhost/api/app/" + app + "/apply/filter";
+  return host + "/api/app/" + app + "/apply/filter";
 }
 
 function getProjectByUser(app, userid){
@@ -404,7 +405,7 @@ function getTaskIdsByProject(app, projectName){
 }
 
 function getDeleteUrl(app){
-  return "http://localhost/api/app/" + app + "/apply";
+  return host + "/api/app/" + app + "/apply";
 }
 
 
@@ -450,7 +451,7 @@ function buildInsertPostBody(para){
 }
 
 function getInsertUrl(app){
-  return "http://localhost/api/app/" + app + "/apply";
+  return host + "/api/app/" + app + "/apply";
 }
 
 
@@ -485,7 +486,7 @@ function update(id, paraMap){
   var postBody = buildInsertPostBody(paraMap);
   var res = null;
   $.ajax({
-    url: 'http://localhost/api/apply/' + id,
+    url: host + '/api/apply/' + id,
     dataType: 'json',
     type: 'post',
     contentType: 'application/json',
