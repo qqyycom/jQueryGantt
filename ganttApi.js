@@ -31,6 +31,7 @@ var projectApp = "849c7437";
 var detailApp = "cfaf51af";
 var sortApp = "76bb501d";
 var host = "http://localhost"
+var taskTemplate = {"id": -1, "name": "Gantt editor", "progress": 0, "progressByWorklog": false, "relevance": 0, "type": "", "typeId": "", "description": "", "code": "", "level": 0, "status": "STATUS_ACTIVE", "depends": "", "canWrite": true, "start": 1396994400000, "duration": 20, "end": 1399586399999, "startIsMilestone": false, "endIsMilestone": false, "collapsed": false, "assigs": [], "hasChild": true};
 
 
 var projectMap = {
@@ -206,23 +207,23 @@ var detailsQueIdMap = buildQueIdNameMap(map);
 function clone(obj) {
   var o;
   if (typeof obj == "object") {
-      if (obj === null) {
-          o = null;
+    if (obj === null) {
+      o = null;
+    } else {
+      if (obj instanceof Array) {
+        o = [];
+        for (var i = 0, len = obj.length; i < len; i++) {
+          o.push(clone(obj[i]));
+        }
       } else {
-          if (obj instanceof Array) {
-              o = [];
-              for (var i = 0, len = obj.length; i < len; i++) {
-                  o.push(clone(obj[i]));
-              }
-          } else {
-              o = {};
-              for (var j in obj) {
-                  o[j] = clone(obj[j]);
-              }
-          }
+        o = {};
+        for (var j in obj) {
+          o[j] = clone(obj[j]);
+        }
       }
+    }
   } else {
-      o = obj;
+    o = obj;
   }
   return o;
 }
@@ -254,22 +255,22 @@ function getResNTimes(requestId, n){
 function getOperationResult(requestId){
   console.info( requestId );
   var res = null;
-    $.ajax({
-      url: host + '/api/operation/' + requestId,
-      type: 'get',
-      headers: {
-        "accessToken": accessToken
-      },
-      async: false,
-      success: function( data, textStatus, jQxhr ){
-        res = data;
-      },
-      error: function( jqXhr, textStatus, errorThrown ){
-          console.info( errorThrown );
-          res = errorThrown;
-      }
-    })
-  
+  $.ajax({
+    url: host + '/api/operation/' + requestId,
+    type: 'get',
+    headers: {
+      "accessToken": accessToken
+    },
+    async: false,
+    success: function( data, textStatus, jQxhr ){
+      res = data;
+    },
+    error: function( jqXhr, textStatus, errorThrown ){
+      console.info( errorThrown );
+      res = errorThrown;
+    }
+  })
+
   return res;
 }
 
@@ -287,14 +288,14 @@ function getProjectByUser(app, userid){
     headers: {
       "accessToken": accessToken
     },
-    data: JSON.stringify( { 
-      "pageSize": 1000, 
+    data: JSON.stringify( {
+      "pageSize": 1000,
       "pageNum": 1,
       "queries": [
         {
           //config
-            "queId": projectMap.projectManager.queId,
-            "searchUserIds": userid
+          "queId": projectMap.projectManager.queId,
+          "searchUserIds": userid
         }
       ]
     } ),
@@ -303,7 +304,7 @@ function getProjectByUser(app, userid){
       res = data.result.result;
     },
     error: function( jqXhr, textStatus, errorThrown ){
-        console.info( errorThrown );
+      console.info( errorThrown );
     }
   })
   return res;
@@ -319,13 +320,13 @@ function getDetailsByUser(app, userid){
     headers: {
       "accessToken": accessToken
     },
-    data: JSON.stringify( { 
-      "pageSize": 1000, 
+    data: JSON.stringify( {
+      "pageSize": 1000,
       "pageNum": 1,
       "queries": [
         {
-            "queId": userQueId,
-            "searchUserIds": userid
+          "queId": userQueId,
+          "searchUserIds": userid
         }
       ]
     } ),
@@ -334,7 +335,7 @@ function getDetailsByUser(app, userid){
       res = data.result.result;
     },
     error: function( jqXhr, textStatus, errorThrown ){
-        console.info( errorThrown );
+      console.info( errorThrown );
     }
   })
   return res;
@@ -350,14 +351,14 @@ function getDetailsByProject(app, projectName){
     headers: {
       "accessToken": accessToken
     },
-    data: JSON.stringify( { 
-      "pageSize": 1000, 
+    data: JSON.stringify( {
+      "pageSize": 1000,
       "pageNum": 1,
       "queries": [
         {
           //config
-            "queId": 34575335,
-            "searchKey": projectName
+          "queId": 34575335,
+          "searchKey": projectName
         }
       ]
     } ),
@@ -366,7 +367,7 @@ function getDetailsByProject(app, projectName){
       res = data.result.result;
     },
     error: function( jqXhr, textStatus, errorThrown ){
-        console.info( errorThrown );
+      console.info( errorThrown );
     }
   })
   return res;
@@ -382,14 +383,14 @@ function getTaskIdsByProject(app, projectName){
     headers: {
       "accessToken": accessToken
     },
-    data: JSON.stringify( { 
-      "pageSize": 1000, 
+    data: JSON.stringify( {
+      "pageSize": 1000,
       "pageNum": 1,
       "queries": [
         {
           //config
-            "queId": sortMap.projectName.queId,
-            "searchKey": projectName
+          "queId": sortMap.projectName.queId,
+          "searchKey": projectName
         }
       ]
     } ),
@@ -398,7 +399,7 @@ function getTaskIdsByProject(app, projectName){
       res = data.result.result;
     },
     error: function( jqXhr, textStatus, errorThrown ){
-        console.info( errorThrown );
+      console.info( errorThrown );
     }
   })
   return res;
@@ -419,17 +420,17 @@ function deleteById(app, applyId){
     headers: {
       "accessToken": accessToken
     },
-    data: JSON.stringify( {  
-      "queries": [],  
+    data: JSON.stringify( {
+      "queries": [],
       "applyIds": applyId
-} ),
+    } ),
     async: false,
     success: function( data, textStatus, jQxhr ){
       console.info(data);
       res = getResNTimes(data.result.requestId, 10) ;
     },
     error: function( jqXhr, textStatus, errorThrown ){
-        console.info( errorThrown );
+      console.info( errorThrown );
     }
   })
   return res;
@@ -437,13 +438,13 @@ function deleteById(app, applyId){
 
 
 function buildInsertPostBody(para){
-  var postBody = [];  
+  var postBody = [];
   var post = clone(map);
 
   for(var key in map){
     if(para[key] != null){
       post[key].values[0].value = para[key];
-      postBody.push(post[key]);  
+      postBody.push(post[key]);
     }
   }
 
@@ -468,14 +469,14 @@ function insert(app, paraMap){
     },
     async: false,
     data: JSON.stringify( {
-      "answers": 
-        postBody
+      "answers":
+      postBody
     } ),
     success: function( data, textStatus, jQxhr ){
       res = getResNTimes(data.result.requestId, 10) ;
     },
     error: function( jqXhr, textStatus, errorThrown ){
-        console.info( errorThrown );
+      console.info( errorThrown );
     }
   })
   return res;
@@ -495,39 +496,84 @@ function update(id, paraMap){
     },
     async: false,
     data: JSON.stringify( {
-      "answers": 
-        postBody
+      "answers":
+      postBody
     } ),
     success: function( data, textStatus, jQxhr ){
       res = getResNTimes(data.result.requestId, 10) ;
       //res = data;
     },
     error: function( jqXhr, textStatus, errorThrown ){
-        console.info( errorThrown );
+      console.info( errorThrown );
+    }
+  })
+  return res;
+}
+
+function getSortLevelByProjectName(projectName){
+  var res = {};
+  var sortQueIdMap = buildQueIdNameMap(sortMap);
+
+  $.ajax({
+    url: getSelectUrl(sortApp),
+    dataType: 'json',
+    type: 'post',
+    contentType: 'application/json',
+    headers: {
+      "accessToken": accessToken
+    },
+    data: JSON.stringify( {
+      "pageSize": 1,
+      "pageNum": 1,
+      "queries": [
+        {
+          //config
+          "queId": sortMap.projectName.queId,
+          "searchKey": projectName
+        }
+      ]
+    } ),
+    async : false,
+    success: function( data, textStatus, jQxhr ){
+      res = parseDetail(data.result.result[0], {"taskIds": "", "levels": ""}, sortQueIdMap) ;
+    },
+    error: function( jqXhr, textStatus, errorThrown ){
+      console.info( errorThrown );
     }
   })
   return res;
 }
 
 function buildTasksByProjectName(projectName){
+  var sort = getSortLevelByProjectName(projectName);
+  var search = ","+sort.taskIds+",";
+
   var detailArray = getDetailsByProject(detailApp,projectName);
   var res = [];
   for(var index in detailArray){
-    res.push(parseDetail(detailArray[index], detailsQueIdMap));
+    res.push(parseDetail(detailArray[index], taskTemplate, detailsQueIdMap));
   }
+
+  res.sort(function(a,b){return search.indexOf("," + a.id + ",") - search.indexOf("," + b.id + ",")});
+
+  var levelArray = sort.levels.split(",");
+  for(var index in res){
+    res[index].level = levelArray[index];
+  }
+
   return res;
 }
 
-var taskTemplate = {"id": -1, "name": "Gantt editor", "progress": 0, "progressByWorklog": false, "relevance": 0, "type": "", "typeId": "", "description": "", "code": "", "level": 0, "status": "STATUS_ACTIVE", "depends": "", "canWrite": true, "start": 1396994400000, "duration": 20, "end": 1399586399999, "startIsMilestone": false, "endIsMilestone": false, "collapsed": false, "assigs": [], "hasChild": true};
 
-function parseDetail(detail, queIdMap){
-  var res = clone(taskTemplate);
+function parseDetail(detail, template, queIdMap){
+  var res = clone(template);
   res.id = detail.applyId;
 
   for(var index in detail.answers){
+
     var column = detail.answers[index];
     var queId = column.queId;
-    
+
     if(queId in queIdMap){
       res[queIdMap[queId]] = column.values[0].value;
     }
@@ -536,7 +582,6 @@ function parseDetail(detail, queIdMap){
   if(!("depend" in res)){
     res.depend = "";
   }
-  console.info(new Date(res.start).getTime());
 
 
   return res;
@@ -557,7 +602,7 @@ function  testDelay(){
     // }, 500 * n);
   }
   return null;
-  
+
 }
 
 
@@ -575,7 +620,7 @@ function test(){
     console.info( para[key] );
     postBody.push(post[key]);
     //post[key]
-    
+
   }
   return postBody;
 }
