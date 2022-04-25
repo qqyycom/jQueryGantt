@@ -115,7 +115,8 @@ $(function() {
   //in order to force compute the best-fitting zoom level
   delete ge.gantt.zoom;
 
-  var project=loadFromLocalStorage();
+  var project=loadGanttFromServer();
+  // var project=loadFromLocalStorage();
 
   if (!project.canWrite)
     $(".ganttButtonBar button.requireWrite").attr("disabled","true");
@@ -123,7 +124,7 @@ $(function() {
   ge.loadProject(project);
   ge.checkpoint(); //empty the undo stack
 
-  initializeHistoryManagement(ge.tasks[0].id);
+  // initializeHistoryManagement(ge.tasks[0].id);
 });
 
 
@@ -160,40 +161,33 @@ ret= {"tasks":    [
     for (var i=0;i<ret.tasks.length;i++) {
       ret.tasks[i].start = ret.tasks[i].start + offset;
     }
-  return ret;
+    return ret;
 }
 
 
 
-function loadGanttFromServer(taskId, callback) {
+function loadGanttFromServer() {
 
   //this is a simulation: load data from the local storage if you have already played with the demo or a textarea with starting demo data
+  /*
   var ret=loadFromLocalStorage();
+   */
 
   //this is the real implementation
-  /*
+
   //var taskId = $("#taskSelector").val();
-  var prof = new Profiler("loadServerSide");
-  prof.reset();
+  // var prof = new Profiler("loadServerSide");
+  // prof.reset();
 
-  $.getJSON("ganttAjaxController.jsp", {CM:"LOADPROJECT",taskId:taskId}, function(response) {
-    //console.debug(response);
-    if (response.ok) {
-      prof.stop();
-
-      ge.loadProject(response.project);
-      ge.checkpoint(); //empty the undo stack
-
-      if (typeof(callback)=="function") {
-        callback(response);
-      }
-    } else {
-      jsonErrorHandling(response);
-    }
-  });
-  */
-
-  return ret;
+  const taskList = buildTasksByProjectName('gantt')
+  //actualize data
+  let offset=new Date().getTime()-taskList[0].start;
+  for (let i=0;i<taskList.length;i++) {
+    taskList[i].id = +taskList[i].id;
+    taskList[i].start = +taskList[i].start + offset;
+    taskList[i].level = +taskList[i].level;
+  }
+  return {"tasks": taskList, "canWrite":    true, "canDelete":true, "canWriteOnParent": true, canAdd:true};
 }
 
 function upload(uploadedFile) {
