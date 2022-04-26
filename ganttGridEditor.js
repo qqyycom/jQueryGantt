@@ -535,6 +535,9 @@ GridEditor.prototype.openFullEditor = function (task, editOnlyAssig) {
 
   //make task editor
   var taskEditor = $.JST.createFromTemplate(task, "TASK_EDITOR");
+  taskEditor.find('#progressSlider').mbSlider({hideStartEndNum: true, onStop: (obj) => {
+    taskEditor.find('#progress').val($(obj).mbgetVal())
+  }})
 
   //hide task data if editing assig only
   if (editOnlyAssig) {

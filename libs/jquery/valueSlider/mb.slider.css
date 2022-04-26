@@ -1,7 +1,8 @@
 .mb_slider{
   position:relative;
-  padding:10px;
-  padding-bottom: 40px;
+  padding:0px;
+  padding-bottom: 10px;
+  padding-top: 10px;
   z-index:0;
   font-family:Arial, Helvetica, sans-serif;
 }

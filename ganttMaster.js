@@ -158,6 +158,12 @@ GanttMaster.prototype.init = function (workSpace) {
     self.gantt.zoomGantt(true);
   }).bind("zoomMinus.gantt", function () {
     self.gantt.zoomGantt(false);
+  }).bind("zoomDay.gantt", function () {
+    self.gantt.zoomGanttWithFix("3d");
+  }).bind("zoomWeek.gantt", function () {
+    self.gantt.zoomGanttWithFix("2w");
+  }).bind("zoomMonth.gantt", function () {
+    self.gantt.zoomGanttWithFix("1M");
 
   }).bind("openFullEditor.gantt", function () {
     self.editor.openFullEditor(self.currentTask,false);
@@ -267,6 +273,23 @@ GanttMaster.prototype.init = function (workSpace) {
     place.trigger("resize.gantt");
   }).oneTime(2, "resize", function () {$(window).trigger("resize")});
 
+  // system fullscreen
+  $(document).bind('fullscreenchange webkitfullscreenchange mozfullscreenchange', function () {
+    if (document.fullscreenElement) {
+      self.workSpace.addClass("ganttFullScreen").resize();
+    } else {
+      self.workSpace.removeClass("ganttFullScreen").resize();
+    }
+    $("#fullscrbtn .teamworkIcon").html(workSpace.is(".ganttFullScreen")?"€":"@");
+  });
+
+  $(document).on('keydown', function (e) {
+    if (e.keyCode == 122) {
+      e.preventDefault();
+      e.stopPropagation(); // 阻止冒泡事件
+      self.fullScreen();
+    }
+  });
 
 };
 
@@ -1155,8 +1178,10 @@ GanttMaster.prototype.collapseAll = function () {
 
 GanttMaster.prototype.fullScreen = function () {
   //console.debug("fullScreen");
-  this.workSpace.toggleClass("ganttFullScreen").resize();
-  $("#fullscrbtn .teamworkIcon").html(this.workSpace.is(".ganttFullScreen")?"€":"@");
+  // this.workSpace.toggleClass("ganttFullScreen").resize();
+  // $("#fullscrbtn .teamworkIcon").html(this.workSpace.is(".ganttFullScreen")?"€":"@");
+  !this.workSpace.is(".ganttFullScreen") ? document.querySelector('#workSpace').requestFullscreen() : document.exitFullscreen()
+
 };
 
 

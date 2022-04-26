@@ -50,6 +50,18 @@ function Ganttalendar(startMillis, endMillis, master, minGanttSize) {
   this.taskVertOffset = (this.master.rowHeight - this.taskHeight) / 2;
 }
 
+Ganttalendar.prototype.zoomGanttWithFix = function (fixedLevel) {
+  var curLevel = this.zoom;
+  if(curLevel != fixedLevel) {
+    var centerMillis=this.getCenterMillis();
+    this.gridChanged=true;
+    this.zoom = fixedLevel;
+    this.storeZoomLevel();
+    this.redraw();
+    this.goToMillis(centerMillis);
+  }
+}
+
 
 Ganttalendar.prototype.zoomGantt = function (isPlus) {
   var curLevel = this.zoom;

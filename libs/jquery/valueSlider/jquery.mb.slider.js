@@ -94,6 +94,11 @@
 
 				$(slider).find("div").css({display: "inline-block", clear: "left"});
 
+				if (options.hideStartEndNum) {
+					slider.sliderStart.css({display: "none"})
+					slider.sliderEnd.css({display: "none"})
+				}
+
 				$(slider).attr("unselectable", "on");
 				$(slider).find("div").attr("unselectable", "on");
 
