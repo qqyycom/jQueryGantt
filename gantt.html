@@ -12,6 +12,8 @@
   <link rel=stylesheet href="ganttDrag.css" type="text/css">
   <link rel=stylesheet href="ganttPrint.css" type="text/css" media="print">
   <link rel=stylesheet href="libs/jquery/valueSlider/mb.slider.css" type="text/css">
+  <link rel=stylesheet href="libs/jquery/jquery-ui.min.css" type="text/css">
+
   <link href="./material-icon.css" rel="stylesheet">
 
 <!--  <script src="https://cdn.jsdelivr.net/npm/jquery@3.1.1/dist/jquery.min.js"></script>-->
@@ -44,6 +46,7 @@
   <script src="ganttZoom.js"></script>
   <script src="ganttTaskDrag.js"></script>
   <script src="ganttGridEditor.js"></script>
+  <script src="GanttProject.js"></script>
   <script src="ganttMaster.js"></script>  
 
 
@@ -57,16 +60,6 @@
 <!--  This Gantt editor is free thanks to <a href="http://twproject.com" target="_blank">Twproject</a> where it can be used on a complete and flexible project management solution.<br> Get your projects done! Give <a href="http://twproject.com" target="_blank">Twproject a try now</a>.-->
 <!--</div>-->
 <div id="workSpace" style="padding:0px; overflow-y:auto; overflow-x:hidden;border:1px solid #e5e5e5;position:relative;margin:0 5px">
-  <div class="dropdown">
-    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-expanded="false">
-      Dropdown button
-    </button>
-    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-      <a class="dropdown-item" href="#">Action</a>
-      <a class="dropdown-item" href="#">Another action</a>
-      <a class="dropdown-item" href="#">Something else here</a>
-    </div>
-  </div>
 </div>
 
 <style>
@@ -113,6 +106,9 @@ $(function() {
 
   //in order to force compute the best-fitting zoom level
   delete ge.gantt.zoom;
+
+  var projectList = loadProjectFromServer();
+  ge.loadProjectSelector(projectList)
 
   var project=loadGanttFromServer();
   // var project=loadFromLocalStorage();
@@ -163,6 +159,11 @@ ret= {"tasks":    [
     return ret;
 }
 
+function loadProjectFromServer() {
+  // getProjectByUser(projectApp, userid)
+  return [{name: "project1", applyTime: 1396994400000},{name: "project2", applyTime: 1396994400000}]
+  // return [];
+}
 
 
 function loadGanttFromServer() {
@@ -182,8 +183,8 @@ function loadGanttFromServer() {
   //actualize data
   let offset=new Date().getTime()-taskList[0].start;
   for (let i=0;i<taskList.length;i++) {
-    taskList[i].id = +taskList[i].id;
     taskList[i].start = +taskList[i].start + offset;
+    taskList[i].end = +taskList[i].end + offset;
     taskList[i].level = +taskList[i].level;
   }
   return {"tasks": taskList, "canWrite":    true, "canDelete":true, "canWriteOnParent": true, canAdd:true};
@@ -511,6 +512,17 @@ function showBaselineInfo (event,element){
 
 
 <div id="gantEditorTemplates" style="display:none;">
+  <div class="__template__" type="GANTTPROJECTSELECTOR"><!--
+  <div class="selector">
+    <label for="project">Select a speed</label>
+    <select name="project" id="project"></select>
+   <div>
+     --></div>
+
+  <div class="__template__" type="GANTTPROJECTOPTION">
+<!--    <option>(#=obj.name#)</option>-->
+  </div>
+
   <div class="__template__" type="GANTBUTTONS">
     <!--
     <div class="ganttButtonBar">

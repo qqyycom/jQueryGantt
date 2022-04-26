@@ -34,6 +34,7 @@ function GanttMaster() {
   this.workSpace;  // the original element used for containing everything
   this.element; // editor and gantt box without buttons
 
+  this.projectSelector;
 
   this.resources; //list of resources
   this.roles;  //list of roles
@@ -106,6 +107,8 @@ GanttMaster.prototype.init = function (workSpace) {
   //load templates
   $("#gantEditorTemplates").loadTemplates().remove();
 
+
+
   //create editor
   this.editor = new GridEditor(this);
   place.append(this.editor.gridified);
@@ -123,6 +126,9 @@ GanttMaster.prototype.init = function (workSpace) {
   place.before(ganttButtons);
   this.checkButtonPermissions();
 
+  // create selector
+  this.projectSelector = new GanttProject(this);
+  ganttButtons.before(this.projectSelector.selector)
 
   //bindings
   workSpace.bind("deleteFocused.gantt", function (e) {
@@ -454,6 +460,11 @@ GanttMaster.prototype.addTask = function (task, row) {
   $(this.element).trigger("addedTask.gantt", task);
   return ret;
 };
+
+
+GanttMaster.prototype.loadProjectSelector = function (projectList) {
+  this.projectSelector.addProjects(projectList)
+}
 
 
 /**
